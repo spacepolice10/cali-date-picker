@@ -66,7 +66,7 @@ export const useCalendar = (propList: useCalendarType) => {
 				dateData.yearNumber,
 				// compensate difference between number of months in JS & actual calendar
 				dateData.monthsNumber + m - 1,
-				dateData.daysNumberInAMonth
+				dateData.daysNumber
 			);
 			const days =
 				generateListOfDaysInAMonthWithOffset(monthsFullDate);
@@ -121,6 +121,9 @@ export const useCalendar = (propList: useCalendarType) => {
 				daysFullDate;
 
 			function selectDate() {
+				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+				// @ts-expect-error
+				document.forms["dateform"].reset();
 				propList?.onChange(daysFullDateWithTime);
 			}
 			return {

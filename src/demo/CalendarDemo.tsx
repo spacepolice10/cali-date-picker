@@ -19,16 +19,16 @@ export const CalendarDemo = ({
 			>
 				{({ listOfMonths, selectPrev, selectNext }) => (
 					<div>
-						<div className="flex gap-4 py-2 border-b">
+						<div className="flex gap-4 px-2 pt-4 pb-2 border-b">
 							<button
 								onClick={selectPrev}
-								className="font-mono text-xs hover:bg-gray-100 p-4"
+								className="font-mono text-xs hover:underline"
 							>
 								prev
 							</button>
 							<button
 								onClick={selectNext}
-								className="font-mono text-xs hover:bg-gray-100 p-4"
+								className="font-mono text-xs hover:underline"
 							>
 								next
 							</button>

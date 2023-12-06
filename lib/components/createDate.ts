@@ -16,8 +16,8 @@ export type createDateReturnType = {
 	minuteNumber: number;
 	secondNumber: number;
 	msNumber: number;
+	daysNumber: number;
 	daysNumberInAWeek: number;
-	daysNumberInAMonth: number;
 	amountOfDaysInAMonth: number;
 	firstMonthDate: number;
 };
@@ -48,14 +48,13 @@ export const createDate = (
 		minuteNumber: date.getMinutes(),
 		secondNumber: date.getSeconds(),
 		msNumber: date.getMilliseconds(),
+		daysNumber: date.getDate(),
 		daysNumberInAWeek: date.getDay(),
-		daysNumberInAMonth: date.getDate(),
-		amountOfDaysInAMonth:
-			new Date(
-				date.getFullYear(),
-				date.getMonth(),
-				0
-			).getDate() + 1,
+		amountOfDaysInAMonth: new Date(
+			date.getFullYear(),
+			date.getMonth(),
+			0
+		).getDate(),
 		firstMonthDate: new Date(
 			date.getFullYear(),
 			date.getMonth(),

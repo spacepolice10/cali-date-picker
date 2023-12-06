@@ -22,7 +22,7 @@ export const ClocksDemo = ({
 				console.log(date);
 				setDate(date);
 			}}
-			className="mt-16"
+			className="mt-10"
 		>
 			{({ hourList, minuteList, secondList }) => (
 				<div className="flex gap-2">

@@ -22,12 +22,11 @@ export type generateTimeListReturnType = {
 export const useClocks = (
 	propList?: useClocksType
 ): useClocksReturnType => {
-	const dt =
-		typeof propList?.date == "string"
-			? new Date(propList?.date)
-			: propList?.date;
 	const date = createDate({
-		date: dt,
+		date:
+			typeof propList?.date == "string"
+				? new Date(propList?.date)
+				: propList?.date,
 		locale: propList?.locale,
 	});
 
@@ -39,12 +38,14 @@ export const useClocks = (
 		const updateDate = new Date(
 			date.yearNumber,
 			date.monthsNumber - 1,
-			date.daysNumberInAMonth,
+			date.daysNumber,
 			args.hour ? args.hour + 1 : date.hourNumber,
 			args.minute ?? date.minuteNumber,
 			args.second ?? date.secondNumber
 		);
-		console.log(updateDate);
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-expect-error
+		document.forms["timeform"].reset();
 		propList?.onChange(updateDate);
 	}
 	function generateHourList() {
