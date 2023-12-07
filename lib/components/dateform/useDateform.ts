@@ -56,7 +56,6 @@ export const useDateform = (
 		const target = ev.target as HTMLInputElement;
 		const year = target.value;
 		const maxVal = 9999;
-
 		if (+year > maxVal) {
 			changeDate({
 				yearNumber: maxVal,
