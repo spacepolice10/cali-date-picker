@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CalendarDemo } from "./demo/CalendarDemo";
 import { ClocksDemo } from "./demo/ClocksDemo";
 import { DateformDemo } from "./demo/DateformDemo";
+import { RangesCalendarDemo } from "./demo/RangesCalendarDemo";
 import { TimeformDemo } from "./demo/TimeformDemo";
 
 function App() {
@@ -26,6 +27,9 @@ function App() {
 					<TimeformDemo date={date} setDate={setDate} />
 					<ClocksDemo date={date} setDate={setDate} />
 				</div>
+			</div>
+			<div>
+				<RangesCalendarDemo date={date} />
 			</div>
 		</>
 	);

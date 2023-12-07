@@ -1,22 +1,23 @@
-import { Dispatch, SetStateAction } from "react";
-import { Calendar } from "../../lib/main";
+import { useState } from "react";
+import { RangesCalendar } from "../../lib/main";
 
-export const CalendarDemo = ({
+export const RangesCalendarDemo = ({
 	date,
-	setDate,
 }: {
 	date: Date;
-	setDate: Dispatch<SetStateAction<Date>>;
 }) => {
+	const [ranges, setRanges] = useState<{
+		RangesBeginsWith: string;
+		RangesEndsWith: string;
+	} | null>(null);
+	console.log(ranges);
 	return (
 		<>
-			<Calendar
-				date={date}
-				onChange={(date) => {
-					console.log(date);
-					setDate(date);
-				}}
-			>
+			<div className="flex gap-4 font-mono bg-gray-100 p-2 rounded-md w-fit mt-2 mx-2">
+				<p>{ranges?.RangesBeginsWith}</p>
+				<p>{ranges?.RangesEndsWith}</p>
+			</div>
+			<RangesCalendar date={date} onChange={setRanges}>
 				{({ months, selectPrev, selectNext }) => (
 					<div>
 						<div className="flex gap-4 px-2 pt-4 pb-2 border-b">
@@ -48,17 +49,17 @@ export const CalendarDemo = ({
 									<div className="px-2 grid w-80 grid-cols-7 gap-2">
 										{m.days.map((d) => (
 											<button
+												{...d.RangesDatePropList}
 												key={d.daysNumber}
-												onClick={() => d.selectDate()}
-												className={`h-10 w-10 font-mono font-bold duration-75 p-2 rounded-sm  
-                                                ${
-																									d.isActive &&
-																									"bg-pink-200"
-																								}
-                                                ${
-																									d.isSelected &&
-																									"bg-sky-200 shadow-lg"
-																								}
+												className={`h-10 w-10 font-mono font-bold duration-75 p-2 rounded-sm ${
+													d.isInRangesBeforeSelect &&
+													"bg-gray-200"
+												} ${d.isInRanges && "bg-gray-200"} ${
+													d.isActive && "bg-pink-200"
+												} ${
+													d.isSelected &&
+													"bg-sky-200 shadow-lg"
+												}
                                                 `}
 											>
 												{d.daysNumber}
@@ -70,7 +71,7 @@ export const CalendarDemo = ({
 						})}
 					</div>
 				)}
-			</Calendar>
+			</RangesCalendar>
 		</>
 	);
 };

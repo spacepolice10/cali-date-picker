@@ -1,46 +1,50 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createDate } from "../createDate";
 
-/**
- * @property {date} — date object or date-compatible string to work with
- * @property {onChange} — callback that returns date selected inside calendar
- * @property {startsFromDate} — date that will be used as a starting point to draw calendar from. If chosen July of 2002, even though `date` is May of 2020, `useCalendar` will return days of July 2002
- * @property {monthsNumberToDraw} — amount of months to return from hook. It might be useful when showing a lof of months is necessary (e.g. for building full-fledged calendars)
- * @property {locale} — https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/DateTimeFormat#locales
- * @property {timezone} — https://www.iana.org/time-zones
- */
-export type useCalendarType = {
+export type useRangesCalendarType = {
 	date: Date | string;
-	onChange: (date: Date) => void;
 	startsFromDate?: Date | string;
 	monthsNumberToDraw?: number;
 	locale?: string;
 	timezone?: string;
+	onChange: (args: {
+		RangesBeginsWith: string;
+		RangesEndsWith: string;
+	}) => void;
 };
 
-export type useCalendarReturnType = {
+export type useRangesCalendarReturnType = {
 	date: Date;
-	months: generateListOfMonthsType;
+	months: overrideGenerateListOfMonthsType;
 	selectPrev: () => void;
 	selectNext: () => void;
 };
 
-export type generateListOfMonthsType = {
+export type overrideGenerateListOfMonthsType = {
 	monthsName: string;
-	days: generateListOfDaysInAMonthWithOffsetType;
+	days: overrideGenerateListOfDaysInAMonthWithOffsetType;
 	yearNumber: number;
 	monthsNumber: number;
 }[];
 
-export type generateListOfDaysInAMonthWithOffsetType = {
-	daysNumber: number;
-	daysName: string;
-	isActive: boolean;
-	isSelected: boolean;
-	selectDate: () => void;
-}[];
+export type overrideGenerateListOfDaysInAMonthWithOffsetType =
+	{
+		isActive: boolean;
+		isSelected: boolean;
+		isInRanges: boolean;
+		isInRangesBeforeSelect: boolean;
+		daysNumber: number;
+		daysName: string;
+		RangesDatePropList: {
+			onMouseEnter: () => void;
+			onMouseLeave: () => void;
+			onClick: () => void;
+		};
+	}[];
 
-export const useCalendar = (propList: useCalendarType) => {
+export const useRangesCalendar = (
+	propList: useRangesCalendarType
+) => {
 	const date = createDate({
 		date:
 			typeof propList.date == "string"
@@ -54,7 +58,25 @@ export const useCalendar = (propList: useCalendarType) => {
 			: propList.startsFromDate
 	);
 
-	function generateListOfMonths(): generateListOfMonthsType {
+	const [RangesBeginsWith, changeRangesBeginsWith] = useState<
+		string | null
+	>(null);
+	const [RangesEndsWith, changeRangesEndsWith] = useState<
+		string | null
+	>(null);
+	const [willBeRangesEndsWith, changeWillBeRangesEndsWith] =
+		useState<string | null>(null);
+
+	useEffect(() => {
+		if (!RangesBeginsWith || !RangesEndsWith) return;
+		propList?.onChange({
+			RangesBeginsWith,
+			RangesEndsWith,
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [RangesEndsWith]);
+
+	function overrideGenerateListOfMonths(): overrideGenerateListOfMonthsType {
 		const dateData = createDate({
 			date: startsFrom,
 			locale: propList.locale,
@@ -69,7 +91,9 @@ export const useCalendar = (propList: useCalendarType) => {
 				dateData.daysNumber
 			);
 			const days =
-				generateListOfDaysInAMonthWithOffset(monthsFullDate);
+				overrideGenerateListOfDaysInAMonthWithOffset(
+					monthsFullDate
+				);
 			return {
 				monthsName: dateData.monthsName,
 				days,
@@ -78,9 +102,10 @@ export const useCalendar = (propList: useCalendarType) => {
 			};
 		});
 	}
-	function generateListOfDaysInAMonthWithOffset(
+
+	function overrideGenerateListOfDaysInAMonthWithOffset(
 		monthsDate: Date
-	): generateListOfDaysInAMonthWithOffsetType {
+	): overrideGenerateListOfDaysInAMonthWithOffsetType {
 		const monthsDateData = createDate({
 			date: monthsDate,
 			locale: propList.locale,
@@ -113,25 +138,49 @@ export const useCalendar = (propList: useCalendarType) => {
 					weekday: "long",
 				}
 			);
-
+			const [starts, ends] = [
+				RangesBeginsWith,
+				RangesEndsWith,
+			].sort();
+			const [startsBeforeSelect, endsBeforeSelect] = [
+				RangesBeginsWith,
+				willBeRangesEndsWith,
+			].sort();
+			const isInRanges =
+				daysFullDate >= (starts ?? "") &&
+				daysFullDate <= (ends ?? "");
+			const isInRangesBeforeSelect =
+				daysFullDate >= (startsBeforeSelect ?? "") &&
+				daysFullDate <= (endsBeforeSelect ?? "") &&
+				!RangesEndsWith;
 			const isActive =
 				monthsDateData.activeDate == daysFullDate;
-			const isSelected =
-				new Date(propList.date).toLocaleDateString() ==
-				daysFullDate;
 
-			function selectDate() {
-				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-				// @ts-expect-error
-				document.forms["dateform"].reset();
-				propList?.onChange(daysFullDateWithTime);
+			function changeDate() {
+				if (RangesEndsWith) {
+					changeRangesBeginsWith(daysFullDate);
+					changeRangesEndsWith(null);
+				} else {
+					if (RangesBeginsWith) {
+						changeRangesEndsWith(daysFullDate);
+					} else {
+						changeRangesBeginsWith(daysFullDate);
+					}
+				}
 			}
+			const RangesDatePropList = {
+				onMouseEnter: () =>
+					changeWillBeRangesEndsWith(daysFullDate),
+				onMouseLeave: () => changeWillBeRangesEndsWith(null),
+				onClick: changeDate,
+			};
 			return {
+				RangesDatePropList,
 				daysNumber,
 				daysName,
 				isActive,
-				isSelected,
-				selectDate,
+				isInRanges,
+				isInRangesBeforeSelect,
 			};
 		});
 		return [...offset, ...days];
@@ -157,7 +206,7 @@ export const useCalendar = (propList: useCalendarType) => {
 			typeof propList.date == "string"
 				? new Date(propList.date)
 				: propList.date,
-		months: generateListOfMonths(),
+		months: overrideGenerateListOfMonths(),
 		selectPrev,
 		selectNext,
 	};
