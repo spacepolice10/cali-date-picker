@@ -1,0 +1,97 @@
+import { Canvas } from "@storybook/blocks";
+import * as ClocksStorybooks from "./Clocks.stories";
+// import * as ClocksStorybooks from "./Calendar.stories";
+
+# Clocks
+
+Unopinionated utility that simplifies process of building `clocks` components.
+
+<Canvas of={ClocksStorybooks.Base} />
+
+## anatomy
+
+In this package `clocks` consists of 2 main fragments:
+
+- hook `useClocks` that generates necessary data to implement clocks with picker functionality.
+- component `Clocks` that behaves as a minimal representation of `useClocks` functionality. It returns date-params through render-prop, so developers have full control over styling & behavior of component in general.
+
+## api
+
+**propList to accept**:
+| PROP | DESC |
+| ---- | ---- |
+| date |actual JS-Date object or string with correct date that is possible to parse via `new Date` method |
+| onChange | callback that will fire when `selectDate` method is called & return selected date |
+| locale | https://shorturl.at/pyEW3 |
+| timezone | https://www.iana.org/time-zones |
+
+**propList to return**:
+| PROP | DESC |
+| ---- | ---- |
+| date | actual JS-Date object or string with correct date that is possible to parse via `new Date` method |
+| hourList | an array of elements of time-fragment signature |
+| minuteList | an array of elements of time-fragment signature |
+| secondList | an array of elements of time-fragment signature |
+
+**propList of `time-fragment` signatures**
+| PROP | DESC |
+| ---- | ---- |
+| number | number that represents certain time-fragment (hour, minute or second) |
+| isSelected | boolean that shows if a time-fragment from array is a selected time-fragment |
+| selectTime | callback that triggers `onChange` function passed to `Clocks` as a prop & return a date with time changed to selected |
+| timeSelectPropList | propList to spread over a button element that will be used as an element that should trigger `onChange`
+
+## examples
+
+Base implementation of calendar using this package looks like this:
+
+```jsx
+    <Clocks
+    // pass params
+          date={new Date()}
+          onChange={(date: Date) => {
+            `updateArgs({ date })`;
+          }}
+        >
+        {/* destructurize object that passed through render prop list */}
+          {({ hourList, minuteList, secondList }) => (
+            {/* utilize prop list with time data to render pickers*/}
+            <div className="flex gap-2">
+              <div className={BlocksStyles}>
+                {hourList.map(({ number, select, isSelected }) => (
+                  <button
+                    onClick={() => select()}
+                    className={ButtonStyles(isSelected)}
+                  >
+                    {number}
+                  </button>
+                ))}
+              </div>
+              <div className={BlocksStyles}>
+                {minuteList.map(({ number, select, isSelected }) => (
+                  <button
+                    onClick={() => select()}
+                    className={ButtonStyles(isSelected)}
+                  >
+                    {number}
+                  </button>
+                ))}
+              </div>
+              <div className={BlocksStyles}>
+                {secondList.map(({ number, select, isSelected }) => (
+                  <button
+                    onClick={() => select()}
+                    className={ButtonStyles(isSelected)}
+                  >
+                    {number}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </Clocks>
+```
+
+_That is how it supposed to look & work like. Form more examples of styling & behavior please check additional stories and examples_
+
+<Canvas of={ClocksStorybooks.Base} />

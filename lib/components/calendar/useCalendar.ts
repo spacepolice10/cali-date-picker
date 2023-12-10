@@ -38,6 +38,7 @@ export type generateListOfDaysInAMonthWithOffsetType = {
   isActive: boolean;
   isSelected: boolean;
   selectDate: () => void;
+  dateSelectPropList: { onClick: () => void; key: string };
 }[];
 
 export const useCalendar = (propList: useCalendarType) => {
@@ -51,7 +52,7 @@ export const useCalendar = (propList: useCalendarType) => {
       ? new Date(propList.startsFromDate)
       : propList.startsFromDate
   );
-  console.log(startsFrom);
+
   function generateListOfMonths(): generateListOfMonthsType {
     const dateData = createDate({
       date: startsFrom
@@ -89,7 +90,7 @@ export const useCalendar = (propList: useCalendarType) => {
       Array(monthsDateData.amountOfDaysInAMonth).keys()
     ).map((d) => {
       // compensate difference between number of months/days in JS & actual calendar
-      const daysNumber = d + 2;
+      const daysNumber = d + 1;
       const daysFullDate = new Date(
         monthsDateData.yearNumber,
         monthsDateData.monthsNumber - 1,
@@ -115,7 +116,7 @@ export const useCalendar = (propList: useCalendarType) => {
       function selectDate() {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
-        document.forms["dateform"].reset();
+        document.forms["dateform"]?.reset();
         propList?.onChange(daysFullDateWithTime);
       }
       return {
@@ -124,6 +125,10 @@ export const useCalendar = (propList: useCalendarType) => {
         isActive,
         isSelected,
         selectDate,
+        dateSelectPropList: {
+          onClick: () => selectDate(),
+          key: daysFullDate.toString(),
+        },
       };
     });
     return [...offset, ...days];
