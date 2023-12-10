@@ -85,7 +85,7 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
       Array(monthsDateData.amountOfDaysInAMonth).keys()
     ).map((d) => {
       // compensate difference between number of months/days in JS & actual calendar
-      const daysNumber = d + 2;
+      const daysNumber = d + 1;
       const daysFullDate = new Date(
         monthsDateData.yearNumber,
         monthsDateData.monthsNumber - 1,
