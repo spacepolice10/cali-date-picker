@@ -24,7 +24,7 @@ export const Base: Story = {
             timeStyle: "long",
           })}
         </p>
-        <Timeform {...args} onChange={(date: Date) => updateArgs(date)}>
+        <Timeform {...args} onChange={(date: Date) => updateArgs({ date })}>
           {({ hourFormPropList, minuteFormPropList, secondFormPropList }) => (
             <div className="flex">
               <input {...hourFormPropList} className={dateFormStyles} />
