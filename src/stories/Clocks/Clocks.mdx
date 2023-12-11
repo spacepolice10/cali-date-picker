@@ -8,14 +8,85 @@ Unopinionated utility that simplifies process of building `clocks` components.
 
 <Canvas of={ClocksStorybooks.Base} />
 
-## anatomy
+## base implementation
+
+Base implementation of clocks using this package looks like this:
+
+```jsx
+
+// import & create Clocks component
+    import { Clocks } from 'spc-calendar'
+
+    <Clocks
+
+    // pass params (date & callback to change date)
+
+          date={new Date()}
+          onChange={(date: Date) => {
+            `updateArgs({ date })`;
+          }}
+        >
+
+        {/* destructurize object that passed through render prop list & pick list of time-fragments that we want to pick */}
+
+          {
+            ({ hourList, minuteList, secondList }) => (
+
+            {/* utilize prop list with time data to render fragments*/}
+
+            <div className="flex gap-2">
+              <div className={BlocksStyles}>
+
+                 {/*render hourList & utilize prop list with time data to render pickers by spreading it over conventional HTML-button*/}
+
+                {hourList.map(({ number, select, isSelected }) => (
+                  <button
+                    onClick={() => select()}
+                    className={ButtonStyles(isSelected)}
+                  >
+                    {number}
+                  </button>
+                ))}
+              </div>
+
+              {/* repeat it for every time-fragment if necessary */}
+
+              <div className={BlocksStyles}>
+                {minuteList.map(({ number, select, isSelected }) => (
+                  <button
+                    onClick={() => select()}
+                    className={ButtonStyles(isSelected)}
+                  >
+                    {number}
+                  </button>
+                ))}
+              </div>
+              <div className={BlocksStyles}>
+                {secondList.map(({ number, select, isSelected }) => (
+                  <button
+                    onClick={() => select()}
+                    className={ButtonStyles(isSelected)}
+                  >
+                    {number}
+                  </button>
+                ))}
+              </div>
+            </div>
+            )
+          }
+        </Clocks>
+```
+
+_☝️ That is how it supposed to look & work like. Form more examples of styling & behavior please check additional stories and examples_
+
+## components
 
 In this package `clocks` consists of 2 main fragments:
 
 - hook `useClocks` that generates necessary data to implement clocks with picker functionality.
 - component `Clocks` that behaves as a minimal representation of `useClocks` functionality. It returns date-params through render-prop, so developers have full control over styling & behavior of component in general.
 
-## api
+## apis
 
 **propList to accept**:
 | PROP | DESC |
@@ -47,15 +118,12 @@ Base implementation of calendar using this package looks like this:
 
 ```jsx
     <Clocks
-    // pass params
           date={new Date()}
           onChange={(date: Date) => {
             `updateArgs({ date })`;
           }}
         >
-        {/* destructurize object that passed through render prop list */}
           {({ hourList, minuteList, secondList }) => (
-            {/* utilize prop list with time data to render pickers*/}
             <div className="flex gap-2">
               <div className={BlocksStyles}>
                 {hourList.map(({ number, select, isSelected }) => (

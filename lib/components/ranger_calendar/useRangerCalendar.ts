@@ -2,9 +2,9 @@ import { useState } from "react";
 import { createDate } from "../createDate";
 
 export type useRangerCalendarType = {
-  startsWithDate?: Date | string;
-  endsWithDate?: Date | string;
-  startsFromDate?: Date | string;
+  startsWithDate?: Date | null;
+  endsWithDate?: Date | null;
+  startsFromDate?: Date | null;
   monthsNumberToDraw?: number;
   locale?: string;
   timezone?: string;
@@ -113,7 +113,6 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
         propList.startsWithDate
           ? new Date(propList.startsWithDate).getTime()
           : undefined,
-        ,
         new Date(willBeRangesEndsWith).getTime(),
       ].sort() as number[];
 

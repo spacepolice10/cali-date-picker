@@ -13,6 +13,7 @@ export const Base: Story = {
   args: {
     date: new Date(),
     className: "border p-6",
+    locale: "en-US",
   },
   render: function Render(args) {
     const [, updateArgs] = useArgs();

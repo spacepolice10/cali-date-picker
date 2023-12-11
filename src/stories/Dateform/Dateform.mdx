@@ -8,14 +8,61 @@ Unopinionated utility that simplifies process of building `dateform` components.
 
 <Canvas of={DateformStorybooks.Base} />
 
-## anatomy
+## base implementation
 
-In this package `clocks` consists of 2 main fragments:
+Base implementation of calendar using this package looks like this:
 
-- hook `useClocks` that generates necessary data to implement clocks with picker functionality.
-- component `Clocks` that behaves as a minimal representation of `useClocks` functionality. It returns date-params through render-prop, so developers have full control over styling & behavior of component in general.
+```jsx
 
-## api
+// import & create Dateform component
+  import { Dateform } from 'spc-calendar'
+
+  <Dateform
+
+    // pass params (date & callback to change date)
+
+      date={date}
+      onChange={(date: Date) => {
+      `updateArgs({ date })`;
+      }}
+    >
+
+    {/* destructurize object that passed through render prop list & pick list of date-fragments that we want to pick */}
+
+    {
+      ({
+        yearFormPropList,
+        monthsFormPropList,
+        daysFormPropList
+      }) => (
+        <div>
+
+        {/*render hourList & utilize prop list with time data to render pickers by spreading it over conventional HTML-button*/}
+
+          <input {...yearFormPropList} className={dateFormStyles} />
+          {"/"}
+
+          {/* repeat it for every time-fragment if necessary */}
+
+          <input {...monthsFormPropList} className={dateFormStyles} />
+          {"/"}
+          <input {...daysFormPropList} className={dateFormStyles} />
+        </div>
+      )
+    }
+</Dateform>
+```
+
+_☝️ That is how it supposed to look & work like. Form more examples of styling & behavior please check additional stories and examples_
+
+## components
+
+In this package `dateform` consists of 2 main fragments:
+
+- hook `useDateform` that generates necessary data to implement form with date-picker functionality.
+- component `Dateform` that behaves as a minimal representation of `useDateform` functionality. It returns date-params through render-prop, so developers have full control over styling & behavior of component in general.
+
+## apis
 
 **propList to accept**:
 | PROP | DESC |
@@ -43,8 +90,6 @@ In this package `clocks` consists of 2 main fragments:
 
 ## examples
 
-Base implementation of calendar using this package looks like this:
-
 ```jsx
       <Dateform
           {...args}
@@ -63,7 +108,5 @@ Base implementation of calendar using this package looks like this:
           )}
         </Dateform>
 ```
-
-_That is how it supposed to look & work like. Form more examples of styling & behavior please check additional stories and examples_
 
 <Canvas of={DateformStorybooks.Base} />

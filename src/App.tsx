@@ -2,7 +2,6 @@ import { useState } from "react";
 
 function App() {
   const [date] = useState(new Date());
-
   return (
     <>
       <p className="font-mono font-bold p-2">{date.toString()}</p>

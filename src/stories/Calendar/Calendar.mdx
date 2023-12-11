@@ -8,16 +8,70 @@ Unopinionated utility that simplifies process of building `calendar` components.
 
 <Canvas of={CalendarStorybooks.Base} />
 
-## anatomy
+## base implementation
+
+Base implementation of calendar using this package looks like this:
+
+```jsx
+
+// import & create Calendar component
+import { Calendar } from 'spc-calendar'
+
+<Calendar
+
+ // pass params (date & callback to change date)
+
+    date={new Date()}
+    onChange={(date: Date) => `changeDate(date)`}
+  >
+
+  {/* destructurize object that passed through render prop list to pick `months` object which contains a list of days with necessary data to render & pick them */}
+
+  {({ months }) => (
+    <div>
+
+      {/* render `months` data as an array */}
+
+      {months.map(({ daysNumber, isActive, isSelected, dateSelectPropList }) => (
+        <>
+
+          {/*  months array includes offset & list of days to render in calendar & prop list to convert conventional HTML-button into date selector. Spread dateSelectPropList over button & style it using other params passed through */}
+
+          <button
+            {...dateSelectPropList}
+            style={{
+              borderColor: isSelected ? "hotpink" : "",
+              backgroundColor: isActive ? "black" : "",
+              color: isActive ? "white" : "",
+            }}
+            className="flex items-center border-b border-transparent justify-center"
+          >
+            {daysNumber}
+          </button>
+        </>
+      ))}
+    </div>
+  )}
+</Calendar>
+```
+
+_☝️ That is how it supposed to look & work like. Form more examples of styling & behavior please check additional stories_
+
+## components
 
 In this package `calendar` consists of 2 main fragments:
 
 - hook `useCalendar` that generates necessary data to generate calendar with picker functionality.
 - component `Calendar` that behaves as a minimal representation of `useCalendar` functionality. It returns date-params through render-prop, so developers have full control over styling & behavior of component in general.
 
-## api
+## import
 
-**propList to accept**:
+- use `import { Calendar } from 'spc-calendar'` if you wish to work with a component
+- use `import { useCalendar } from 'spc-calendar'` if you wish to build a component yourself
+
+## apis
+
+**options**:
 | PROP | DESC |
 | ---- | ---- |
 | date |actual JS-Date object or string with correct date that is possible to parse via `new Date` method |
@@ -27,7 +81,7 @@ In this package `calendar` consists of 2 main fragments:
 | locale | https://shorturl.at/pyEW3 |
 | timezone | https://www.iana.org/time-zones |
 
-**propList to return**:
+**returned propList**:
 | PROP | DESC |
 | ---- | ---- |
 | date | actual JS-Date object or string with correct date that is possible to parse via `new Date` method |
@@ -35,7 +89,15 @@ In this package `calendar` consists of 2 main fragments:
 | selectPrev | callback that switches `startsFromDate` prop to previous month |
 | selectNext | callback that switches `startsFromDate` prop to next month |
 
-**propList of `days` signatures**
+**`months` signatures**
+| PROP | DESC |
+| ---- | ---- |
+| monthsName | name of month of the current selected date based on passed `locale` |
+| days | list of days to render & work with ( _please refer to `days` signature_ ) |
+| yearNumber | number of a year of rendered month object |
+| monthsNumber | number of rendered months object |
+
+**`days` signatures**
 | PROP | DESC |
 | ---- | ---- |
 | daysNumber | number of days from the first one in the month to the last one based on what number JS Date object returns |
@@ -52,7 +114,8 @@ Base implementation of calendar using this package looks like this:
 ```jsx
 <Calendar date={new Date()} onChange={(date: Date) => `changeDate(date)`}>
   // we pass callback in the body of component
-  {({ months }) => (
+  {
+    ({ months }) => (
     <div>
       // render `months` data as an array
       {months.map(({ daysNumber, isActive, isSelected, dateSelectPropList }) => (
@@ -72,7 +135,8 @@ Base implementation of calendar using this package looks like this:
         </>
       ))}
     </div>
-  )}
+    )
+  }
 </Calendar>
 ```
 

@@ -8,14 +8,64 @@ Unopinionated utility that simplifies process of building `Timeform` components.
 
 <Canvas of={TimeformStorybooks.Base} />
 
-## anatomy
+## base implementation
 
-In this package `clocks` consists of 2 main fragments:
+Base implementation of calendar using this package looks like this:
 
-- hook `useClocks` that generates necessary data to implement clocks with picker functionality.
-- component `Clocks` that behaves as a minimal representation of `useClocks` functionality. It returns date-params through render-prop, so developers have full control over styling & behavior of component in general.
+```jsx
+// import & create Dateform component
+  	import { Timeform } from 'spc-calendar'
 
-## api
+ 	<Timeform
+
+	 // pass params (date & callback to change date)
+
+		date={date}
+		onChange={(date: Date) => `updateArgs(date)`}
+	>
+
+    	{/* destructurize object that passed through render prop list & pick list of date-fragments that we want to pick */}
+
+			{
+				({
+					hourFormPropList,
+					minuteFormPropList,
+					secondFormPropList,
+				}) => (
+					<div>
+
+					{/*render hourList & utilize prop list with time data to render pickers by spreading it over conventional HTML-button*/}
+
+						<input
+							{...hourFormPropList}
+							className={TimeformStyles}
+						/>
+						{"/"}
+						<input
+							{...minuteFormPropList}
+							className={TimeformStyles}
+						/>
+						{"/"}
+						<input
+							{...secondFormPropList}
+							className={TimeformStyles}
+						/>
+					</div>
+					)
+			}
+			</Timeform>
+```
+
+_☝️ That is how it supposed to look & work like. Form more examples of styling & behavior please check additional stories and examples_
+
+## components
+
+In this package `timeform` consists of 2 main fragments:
+
+- hook `useTimeform` that generates necessary data to implement clocks with picker functionality.
+- component `Timeform` that behaves as a minimal representation of `useTimeform` functionality. It returns date-params through render-prop, so developers have full control over styling & behavior of component in general.
+
+## apis
 
 **propList to accept**:
 | PROP | DESC |
