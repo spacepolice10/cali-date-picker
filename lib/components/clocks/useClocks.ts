@@ -43,7 +43,6 @@ export const useClocks = (propList?: useClocksType): useClocksReturnType => {
       args.second ?? date.secondNumber
     );
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
     document.forms["timeform"]?.reset();
     propList?.onChange(updateDate);
   }

@@ -12,6 +12,7 @@
   ],
   "type": "module",
   "main": "dist/spc-calendar.js",
+  "types": "dist/main.d.ts",
   "files": [
     "dist"
   ],
