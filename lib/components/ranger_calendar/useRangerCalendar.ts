@@ -2,8 +2,8 @@ import { useState } from "react";
 import { createDate } from "../createDate";
 
 export type useRangerCalendarType = {
-  startsWithDate: Date | string;
-  endsWithDate: Date | string;
+  startsWithDate?: Date | string;
+  endsWithDate?: Date | string;
   startsFromDate?: Date | string;
   monthsNumberToDraw?: number;
   locale?: string;
@@ -47,9 +47,7 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
       ? new Date(propList.startsFromDate)
       : propList.startsFromDate
   );
-  const [willBeRangesEndsWith, changeWillBeRangesEndsWith] = useState<
-    string | null
-  >(null);
+  const [willBeRangesEndsWith, changeWillBeRangesEndsWith] = useState<number>(0);
 
   function overrideGenerateListOfMonths(): overrideGenerateListOfMonthsType {
     const dateData = createDate({
@@ -91,7 +89,7 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
         monthsDateData.monthsNumber - 1,
         daysNumber,
         0
-      ).toLocaleDateString();
+      );
       const daysFullDateWithTime = new Date(
         monthsDateData.yearNumber,
         monthsDateData.monthsNumber - 1,
@@ -104,20 +102,31 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
         weekday: "long",
       });
       const [starts, ends] = [
-        propList.startsWithDate,
-        propList.endsWithDate,
-      ].sort();
+        propList.startsWithDate
+          ? new Date(propList.startsWithDate).getTime()
+          : undefined,
+        propList.endsWithDate
+          ? new Date(propList.endsWithDate).getTime()
+          : undefined,
+      ].sort() as number[];
       const [startsBeforeSelect, endsBeforeSelect] = [
-        propList.startsWithDate,
-        willBeRangesEndsWith,
-      ].sort();
+        propList.startsWithDate
+          ? new Date(propList.startsWithDate).getTime()
+          : undefined,
+        ,
+        new Date(willBeRangesEndsWith).getTime(),
+      ].sort() as number[];
+
       const isInRanges =
-        daysFullDate >= (starts ?? "") && daysFullDate <= (ends ?? "");
+        daysFullDate.getTime() >= new Date(starts).getTime() &&
+        daysFullDate.getTime() <= new Date(ends).getTime();
       const isInRangesBeforeSelect =
-        daysFullDate >= (startsBeforeSelect ?? "") &&
-        daysFullDate <= (endsBeforeSelect ?? "") &&
+        daysFullDate.getTime() >= startsBeforeSelect &&
+        daysFullDate.getTime() <= endsBeforeSelect &&
         !propList.endsWithDate;
-      const isActive = monthsDateData.activeDate == daysFullDate;
+
+      const isActive =
+        monthsDateData.activeDate == daysFullDate.toLocaleDateString();
 
       function changeDate() {
         if (propList.endsWithDate) {
@@ -133,15 +142,16 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
       }
       return {
         dateSelectPropList: {
-          onMouseEnter: () => changeWillBeRangesEndsWith(daysFullDate),
-          onMouseLeave: () => changeWillBeRangesEndsWith(null),
+          onMouseOver: () => changeWillBeRangesEndsWith(daysFullDate.getTime()),
+          onMouseLeave: () => changeWillBeRangesEndsWith(0),
           onClick: changeDate,
-          key: daysFullDate,
+          key: new Date(daysFullDate).getTime(),
         },
         daysNumber,
         daysName,
         isActive,
-        isInRanges: isInRanges || isInRangesBeforeSelect,
+        isInRanges,
+        isInRangesBeforeSelect,
       };
     });
     return [...offset, ...days];
