@@ -38,7 +38,7 @@ export const useClocks = (propList?: useClocksType): useClocksReturnType => {
       date.yearNumber,
       date.monthsNumber - 1,
       date.daysNumber,
-      args.hour ? args.hour + 1 : date.hourNumber,
+      args.hour != undefined ? args.hour : date.hourNumber,
       args.minute ?? date.minuteNumber,
       args.second ?? date.secondNumber
     );
@@ -48,13 +48,12 @@ export const useClocks = (propList?: useClocksType): useClocksReturnType => {
   }
   function generateHourList() {
     return [...Array(24).keys()].map((hour) => {
-      const isSelected = hour + 1 == date.hourNumber;
+      const isSelected = hour == date.hourNumber;
       function selectHour() {
         changeTime({ hour });
       }
       return {
-        number:
-          hour != 23 ? `${hour + 1}`.padStart(2, "0") : `${0}`.padStart(2, "0"),
+        number: `${hour}`.padStart(2, "0"),
         isSelected,
         selectTime: selectHour,
         timeSelectPropList: {
