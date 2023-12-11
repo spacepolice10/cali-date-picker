@@ -1,0 +1,16 @@
+src/**/*
+src/**/demo
+src/**/docs
+src/**/test
+src/App.tsx
+src/index.css
+.node_modules
+node_modules
+postcss.config.js
+tailwind.config.js
+.eslintrc.cjs
+public
+.storybook
+.husky
+.gitignore
+
