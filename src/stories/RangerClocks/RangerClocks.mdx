@@ -1,0 +1,96 @@
+import { Canvas } from "@storybook/blocks";
+import * as RangerClocksStorybooks from "./RangerClocks.stories";
+// import * as RangerClocksStorybooks from "./Calendar.stories";
+
+# RangerClocks
+
+Unopinionated utility that simplifies process of building `ranger clocks` components.
+
+<Canvas of={RangerClocksStorybooks.Base} />
+
+## anatomy
+
+In this package `ranger clocks` consists of 2 main fragments:
+
+- hook `useRangerClocks` that generates necessary data to generate clocks with picking ranges functionality.
+- component `RangerClocks`s that behaves as a minimal representation of `useRangerClocks` functionality. It returns date-params through render-prop, so developers have full control over styling & behavior of component in general.
+
+## api
+
+**propList to accept**:
+| PROP | DESC |
+| ---- | ---- |
+| date |actual JS-Date object or string with correct date that is possible to parse via `new Date` method |
+| onChange | callback that will fire when `selectDate` method is called & return selected date |
+| startsFromDate:? | date that will be used as a starting point to draw calendar from. If chosen July of 2002, even though `date` is May of 2020, `useCalendar` will return days of July 2002 |
+| monthsNumberToDraw:? | amount of months to return from hook. It might be useful when showing a lof of months is necessary (e.g. for building full-fledged calendars) |
+| locale | https://shorturl.at/pyEW3 |
+| timezone | https://www.iana.org/time-zones |
+
+**propList to return**:
+| PROP | DESC |
+| ---- | ---- |
+| date | actual JS-Date object or string with correct date that is possible to parse via `new Date` method |
+| months | an array of objects with days signature ( _please refer to `days APIS` within tables below_ )
+| selectPrev | callback that switches `startsFromDate` prop to previous month |
+| selectNext | callback that switches `startsFromDate` prop to next month |
+
+**propList of `days` signatures**
+| PROP | DESC |
+| ---- | ---- |
+| daysNumber | number of days from the first one in the month to the last one based on what number JS Date object returns |
+| daysName | name of day at specific day number |
+| isActive | boolean that shows if a day from array is a current day |
+| isSelected | boolean that shows if a day from array is a selected day |
+| selectDate | callback that triggers `onChange` function passed to `Calendar` as a prop |
+| dateSelectPropList | propList to spread over a button element that will be used as an element that should trigger `onChange`
+
+## examples
+
+Base implementation of calendar using this package looks like this:
+
+```jsx
+   <RangerCalendar
+          {...args}
+          date={args.date as Date}
+          onChange={(date: Date) => {
+            `updateArgs({
+              date,
+            })`;
+          }}
+        >
+          {({ months }) => (
+            <>
+              {months.map(({ days }) => (
+                <div className="grid grid-cols-7 w-52 p-2">
+                  {days.map(
+                    ({
+                      daysNumber,
+                      isInRanges,
+                      dateSelectPropList,
+                      isSelected,
+                    }) => (
+                      <button
+                        {...dateSelectPropList}
+                        key={dateSelectPropList?.key}
+                        style={{
+                          borderColor: isSelected ? "hotpink" : "",
+                          backgroundColor: isInRanges ? "black" : "",
+                          color: isInRanges ? "white" : "",
+                        }}
+                        className="flex items-center p-[2px] border-b border-transparent justify-center"
+                      >
+                        {daysNumber}
+                      </button>
+                    )
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+        </RangerCalendar>
+```
+
+_That is how it supposed to look & work like. Form more examples of styling & behavior please check additional stories_
+
+<Canvas of={RangerClocksStorybooks.Base} />
