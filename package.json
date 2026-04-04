@@ -13,6 +13,16 @@
   "type": "module",
   "main": "dist/cali-date-picker.js",
   "types": "dist/main.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/cali-date-picker.js",
+      "types": "./dist/main.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core.js",
+      "types": "./dist/core/index.d.ts"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -32,6 +42,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^1.6.1",
+    "@hotwired/stimulus": "^3.2.2",
     "@storybook/addon-essentials": "^8.1.11",
     "@storybook/addon-interactions": "^8.1.11",
     "@storybook/addon-links": "^8.1.11",

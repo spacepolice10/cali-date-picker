@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { coerceToDate, createDate } from "../createDate";
+import {
+  CalendarCoreProps,
+  CalendarMonthData,
+  CalendarState,
+  calendarNavNext,
+  calendarNavPrev,
+  computeCalendar,
+  getCalendarInitialState,
+} from "../../core/calendar";
 
 /**
  * @property {date} — date object or date-compatible string to work with
@@ -9,136 +17,33 @@ import { coerceToDate, createDate } from "../createDate";
  * @property {locale} — https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/DateTimeFormat#locales
  * @property {timezone} — https://www.iana.org/time-zones
  */
-export type useCalendarType = {
-  date: Date | string;
-  onChange: (date: Date) => void;
-  startsFromDate?: Date | string;
-  monthsNumberToDraw?: number;
-  locale?: string;
-  timezone?: string;
-};
+export type useCalendarType = CalendarCoreProps;
 
 export type useCalendarReturnType = {
   date: Date;
-  months: generateListOfMonthsType;
+  months: CalendarMonthData[];
   selectPrev: () => void;
   selectNext: () => void;
 };
 
-export type generateListOfMonthsType = {
-  monthsName: string;
-  days: generateListOfDaysInAMonthWithOffsetType;
-  yearNumber: number;
-  monthsNumber: number;
-}[];
+export type generateListOfMonthsType = CalendarMonthData[];
 
-export type generateListOfDaysInAMonthWithOffsetType = {
-  daysNumber: number;
-  daysName: string;
-  isActive: boolean;
-  isSelected: boolean;
-  selectDate: () => void;
-  dateSelectPropList: { onClick: () => void; key: string };
-}[];
+export type generateListOfDaysInAMonthWithOffsetType =
+  CalendarMonthData["days"];
 
-export const useCalendar = (propList: useCalendarType) => {
-  const date = createDate({
-    date: coerceToDate(propList.date),
-    locale: propList.locale,
-  });
-  const [startsFrom, changeStartsFrom] = useState(
-    coerceToDate(propList.startsFromDate)
+export const useCalendar = (propList: useCalendarType): useCalendarReturnType => {
+  const [state, setState] = useState<CalendarState>(() =>
+    getCalendarInitialState(propList)
   );
 
-  function generateListOfMonths(): generateListOfMonthsType {
-    const dateData = createDate({
-      date: startsFrom ?? coerceToDate(propList.date),
-      locale: propList.locale,
-    });
-    return Array.from(Array(propList.monthsNumberToDraw).keys()).map((m) => {
-      const monthsFullDate = new Date(
-        dateData.yearNumber,
-        // compensate difference between number of months in JS
-        dateData.monthsNumber + m - 1,
-        dateData.daysNumber
-      );
-      const days = generateListOfDaysInAMonthWithOffset(monthsFullDate);
-      return {
-        monthsName: dateData.monthsName,
-        days,
-        yearNumber: dateData.yearNumber,
-        monthsNumber: dateData.monthsNumber,
-      };
-    });
-  }
-  function generateListOfDaysInAMonthWithOffset(
-    monthsDate: Date
-  ): generateListOfDaysInAMonthWithOffsetType {
-    const monthsDateData = createDate({
-      date: monthsDate,
-      locale: propList.locale,
-    });
-    const offset = Array(monthsDateData.firstMonthDate).fill("");
-    const days = Array.from(
-      Array(monthsDateData.amountOfDaysInAMonth).keys()
-    ).map((d) => {
-      // compensate difference between number of months/days in JS & actual calendar
-      const daysNumber = d + 1;
-      const daysFullDate = new Date(
-        monthsDateData.yearNumber,
-        monthsDateData.monthsNumber - 1,
-        daysNumber,
-        0
-      ).toLocaleDateString();
-      const daysFullDateWithTime = new Date(
-        monthsDateData.yearNumber,
-        monthsDateData.monthsNumber - 1,
-        daysNumber,
-        date.hourNumber,
-        date.minuteNumber,
-        date.secondNumber
-      );
-      const daysName = daysFullDateWithTime.toLocaleString(propList.locale, {
-        weekday: "long",
-      });
-
-      const isActive = monthsDateData.activeDate === daysFullDate;
-      const isSelected =
-        (coerceToDate(propList.date)?.toLocaleDateString() ?? "") === daysFullDate;
-
-      function selectDate() {
-        propList?.onChange(daysFullDateWithTime);
-      }
-      return {
-        daysNumber,
-        daysName,
-        isActive,
-        isSelected,
-        selectDate,
-        dateSelectPropList: {
-          onClick: () => selectDate(),
-          key: daysFullDate.toString(),
-        },
-      };
-    });
-    return [...offset, ...days];
-  }
+  const { date, months } = computeCalendar(propList, state);
 
   function selectPrev() {
-    const sf = new Date(startsFrom ?? coerceToDate(propList.date) ?? new Date());
-    sf.setMonth(sf.getMonth() - 1);
-    changeStartsFrom(sf);
+    setState(calendarNavPrev(propList, state));
   }
   function selectNext() {
-    const sf = new Date(startsFrom ?? coerceToDate(propList.date) ?? new Date());
-    sf.setMonth(sf.getMonth() + 1);
-    changeStartsFrom(sf);
+    setState(calendarNavNext(propList, state));
   }
 
-  return {
-    date: coerceToDate(propList.date) ?? new Date(),
-    months: generateListOfMonths(),
-    selectPrev,
-    selectNext,
-  };
+  return { date, months, selectPrev, selectNext };
 };

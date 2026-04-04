@@ -8,7 +8,10 @@ export default defineConfig({
   build: {
     copyPublicDir: false,
     lib: {
-      entry: resolve(__dirname, "lib/main.ts"),
+      entry: {
+        "cali-date-picker": resolve(__dirname, "lib/main.ts"),
+        core: resolve(__dirname, "lib/core/index.ts"),
+      },
       formats: ["es"],
     },
     rollupOptions: {
