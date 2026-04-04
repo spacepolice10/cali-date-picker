@@ -44,7 +44,7 @@ export const createDate = (propList?: createDateType): createDateReturnType => {
     .split(" ");
 
   return {
-    activeDateWithTime: new Date(),
+    activeDateWithTime: date,
     activeDate: new Date().toLocaleDateString(),
     daysName,
     monthsName,

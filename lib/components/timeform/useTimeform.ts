@@ -1,4 +1,4 @@
-import { createDate } from "../createDate";
+import { coerceToDate, createDate } from "../createDate";
 
 export type useTimeformType = {
   date: Date;
@@ -22,10 +22,7 @@ export type timeformType = {
 
 export const useTimeform = (propList: useTimeformType) => {
   const date = createDate({
-    date:
-      typeof propList?.date == "string"
-        ? new Date(propList?.date)
-        : propList?.date,
+    date: coerceToDate(propList?.date),
     locale: propList?.locale,
   });
 
@@ -47,8 +44,8 @@ export const useTimeform = (propList: useTimeformType) => {
   function updateHour(ev: React.FormEvent) {
     const target = ev.target as HTMLInputElement;
     const hour = target.value;
-    const maxVal = 24;
-    if (+hour == 0) {
+    const maxVal = 23;
+    if (+hour === 0) {
       changeTime({ hourNumber: 0 });
       return;
     }
@@ -61,7 +58,7 @@ export const useTimeform = (propList: useTimeformType) => {
   function updateMinute(ev: React.FormEvent) {
     const target = ev.target as HTMLInputElement;
     const minute = target.value;
-    const maxVal = 60;
+    const maxVal = 59;
     if (+minute <= 0) return;
     if (+minute > maxVal) {
       changeTime({ minuteNumber: maxVal });
@@ -72,7 +69,7 @@ export const useTimeform = (propList: useTimeformType) => {
   function updateSecond(ev: React.FormEvent) {
     const target = ev.target as HTMLInputElement;
     const second = target.value;
-    const maxVal = 60;
+    const maxVal = 59;
     if (+second <= 0) return;
     if (+second > maxVal) {
       changeTime({ secondNumber: maxVal });
@@ -83,7 +80,7 @@ export const useTimeform = (propList: useTimeformType) => {
   const hourFormPropList = {
     onChange: updateHour,
     defaultValue: `${date.hourNumber}`,
-    maxLength: 4,
+    maxLength: 2,
   };
   const minuteFormPropList = {
     onChange: updateMinute,

@@ -66,7 +66,7 @@ export const useClocks = (propList?: useClocksType): useClocksReturnType => {
   return {
     date: coerceToDate(propList?.date),
     hourList: generateTimeUnitList(24, date.hourNumber, "hour"),
-    minuteList: generateTimeUnitList(61, date.minuteNumber, "minute"),
-    secondList: generateTimeUnitList(61, date.secondNumber, "second"),
+    minuteList: generateTimeUnitList(60, date.minuteNumber, "minute"),
+    secondList: generateTimeUnitList(60, date.secondNumber, "second"),
   };
 };

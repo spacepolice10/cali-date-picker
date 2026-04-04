@@ -33,19 +33,14 @@ export const useDateform = (
 		monthsNumber?: number;
 		yearNumber?: number;
 	}) {
-		const dt = Object.assign({}, date, {
-			daysNumber: args.daysNumber ?? date.daysNumber,
-			monthsNumber:
-				args.monthsNumber ?? date.monthsNumber - 1,
-			yearNumber: args.yearNumber ?? date.yearNumber,
-		});
+		const monthsNumber1Based = args.monthsNumber ?? date.monthsNumber;
 		const updateDate = new Date(
-			dt.yearNumber,
-			dt.monthsNumber,
-			dt.daysNumber,
-			dt.hourNumber,
-			dt.minuteNumber,
-			dt.secondNumber
+			args.yearNumber ?? date.yearNumber,
+			monthsNumber1Based - 1,
+			args.daysNumber ?? date.daysNumber,
+			date.hourNumber,
+			date.minuteNumber,
+			date.secondNumber
 		);
 		propList?.onChange(updateDate);
 	}
@@ -78,10 +73,11 @@ export const useDateform = (
 		const target = ev.target as HTMLInputElement;
 		const months = target.value;
 		const maxVal = 12;
+		if (+months <= 0) return;
 		if (+months > maxVal) {
 			changeDate({ monthsNumber: maxVal });
 		} else {
-			changeDate({ monthsNumber: +months - 1 });
+			changeDate({ monthsNumber: +months });
 		}
 	}
 
