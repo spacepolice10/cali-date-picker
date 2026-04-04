@@ -1,4 +1,4 @@
-import { createDate } from "../createDate";
+import { coerceToDate, createDate } from "../createDate";
 
 export type useDateformType = {
 	date: Date;
@@ -24,10 +24,7 @@ export const useDateform = (
 	propList?: useDateformType
 ): useDateformReturnType => {
 	const date = createDate({
-		date:
-			typeof propList?.date == "string"
-				? new Date(propList?.date)
-				: propList?.date,
+		date: coerceToDate(propList?.date),
 		locale: propList?.locale,
 	});
 
@@ -36,7 +33,7 @@ export const useDateform = (
 		monthsNumber?: number;
 		yearNumber?: number;
 	}) {
-		const dt = Object.assign(date, {
+		const dt = Object.assign({}, date, {
 			daysNumber: args.daysNumber ?? date.daysNumber,
 			monthsNumber:
 				args.monthsNumber ?? date.monthsNumber - 1,

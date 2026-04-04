@@ -1,4 +1,4 @@
-import { createDate } from "../createDate";
+import { coerceToDate, createDate } from "../createDate";
 
 export type useClocksType = {
   date: Date;
@@ -26,10 +26,7 @@ export type generateTimeListReturnType = {
 
 export const useClocks = (propList?: useClocksType): useClocksReturnType => {
   const date = createDate({
-    date:
-      typeof propList?.date == "string"
-        ? new Date(propList?.date)
-        : propList?.date,
+    date: coerceToDate(propList?.date),
     locale: propList?.locale,
   });
 
@@ -42,69 +39,34 @@ export const useClocks = (propList?: useClocksType): useClocksReturnType => {
       args.minute ?? date.minuteNumber,
       args.second ?? date.secondNumber
     );
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    document.forms["timeform"]?.reset();
     propList?.onChange(updateDate);
   }
-  function generateHourList() {
-    return [...Array(24).keys()].map((hour) => {
-      const isSelected = hour == date.hourNumber;
-      function selectHour() {
-        changeTime({ hour });
+
+  function generateTimeUnitList(
+    count: number,
+    currentValue: number,
+    timeKey: "hour" | "minute" | "second"
+  ): generateTimeListReturnType {
+    return [...Array(count).keys()].map((value) => {
+      function selectTime() {
+        changeTime({ [timeKey]: value });
       }
       return {
-        number: `${hour}`.padStart(2, "0"),
-        isSelected,
-        selectTime: selectHour,
+        number: `${value}`.padStart(2, "0"),
+        isSelected: value === currentValue,
+        selectTime,
         timeSelectPropList: {
-          onClick: selectHour,
-          key: `${hour}`,
-        },
-      };
-    });
-  }
-  function generateMinuteList() {
-    return [...Array(61).keys()].map((minute) => {
-      const isSelected = minute == date.minuteNumber;
-      function selectMinute() {
-        changeTime({ minute });
-      }
-      return {
-        number: `${minute}`.padStart(2, "0"),
-        isSelected,
-        selectTime: selectMinute,
-        timeSelectPropList: {
-          onClick: selectMinute,
-          key: `${minute}`,
-        },
-      };
-    });
-  }
-  function generateSecondList() {
-    return [...Array(61).keys()].map((second) => {
-      const isSelected = second == date.secondNumber;
-      function selectSecond() {
-        changeTime({ second });
-      }
-      return {
-        number: `${second}`.padStart(2, "0"),
-        isSelected,
-        selectTime: selectSecond,
-        timeSelectPropList: {
-          onClick: selectSecond,
-          key: `${second}`,
+          onClick: selectTime,
+          key: `${value}`,
         },
       };
     });
   }
 
   return {
-    date:
-      typeof propList?.date == "string"
-        ? new Date(propList.date)
-        : propList?.date,
-    hourList: generateHourList(),
-    minuteList: generateMinuteList(),
-    secondList: generateSecondList(),
+    date: coerceToDate(propList?.date),
+    hourList: generateTimeUnitList(24, date.hourNumber, "hour"),
+    minuteList: generateTimeUnitList(61, date.minuteNumber, "minute"),
+    secondList: generateTimeUnitList(61, date.secondNumber, "second"),
   };
 };

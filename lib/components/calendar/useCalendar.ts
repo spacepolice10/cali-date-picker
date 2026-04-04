@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createDate } from "../createDate";
+import { coerceToDate, createDate } from "../createDate";
 
 /**
  * @property {date} — date object or date-compatible string to work with
@@ -43,23 +43,16 @@ export type generateListOfDaysInAMonthWithOffsetType = {
 
 export const useCalendar = (propList: useCalendarType) => {
   const date = createDate({
-    date:
-      typeof propList.date == "string" ? new Date(propList.date) : propList.date,
+    date: coerceToDate(propList.date),
     locale: propList.locale,
   });
   const [startsFrom, changeStartsFrom] = useState(
-    typeof propList.startsFromDate == "string"
-      ? new Date(propList.startsFromDate)
-      : propList.startsFromDate
+    coerceToDate(propList.startsFromDate)
   );
 
   function generateListOfMonths(): generateListOfMonthsType {
     const dateData = createDate({
-      date: startsFrom
-        ? startsFrom
-        : typeof propList.date == "string"
-          ? new Date(propList.date)
-          : propList.date,
+      date: startsFrom ?? coerceToDate(propList.date),
       locale: propList.locale,
     });
     return Array.from(Array(propList.monthsNumberToDraw).keys()).map((m) => {
@@ -114,8 +107,6 @@ export const useCalendar = (propList: useCalendarType) => {
         new Date(propList.date).toLocaleDateString() == daysFullDate;
 
       function selectDate() {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        document.forms["dateform"]?.reset();
         propList?.onChange(daysFullDateWithTime);
       }
       return {
@@ -134,19 +125,18 @@ export const useCalendar = (propList: useCalendarType) => {
   }
 
   function selectPrev() {
-    const sf = startsFrom ?? new Date();
-    const updateDate = new Date(sf.setMonth(sf.getMonth() - 1));
-    changeStartsFrom(updateDate);
+    const sf = new Date(startsFrom ?? new Date());
+    sf.setMonth(sf.getMonth() - 1);
+    changeStartsFrom(sf);
   }
   function selectNext() {
-    const sf = startsFrom ?? new Date();
-    const updateDate = new Date(sf.setMonth(sf.getMonth() + 1));
-    changeStartsFrom(updateDate);
+    const sf = new Date(startsFrom ?? new Date());
+    sf.setMonth(sf.getMonth() + 1);
+    changeStartsFrom(sf);
   }
 
   return {
-    date:
-      typeof propList.date == "string" ? new Date(propList.date) : propList.date,
+    date: coerceToDate(propList.date) ?? new Date(),
     months: generateListOfMonths(),
     selectPrev,
     selectNext,

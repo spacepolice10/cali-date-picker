@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createDate } from "../createDate";
+import { coerceToDate, createDate } from "../createDate";
 
 export type useRangerCalendarType = {
   startsWithDate?: Date | null;
@@ -43,9 +43,7 @@ export type overrideGenerateListOfDaysInAMonthWithOffsetType = {
 
 export const useRangerCalendar = (propList: useRangerCalendarType) => {
   const [startsFrom, changeStartsFrom] = useState(
-    typeof propList.startsFromDate == "string"
-      ? new Date(propList.startsFromDate)
-      : propList.startsFromDate
+    coerceToDate(propList.startsFromDate)
   );
   const [willBeRangesEndsWith, changeWillBeRangesEndsWith] = useState<number>(0);
 
@@ -78,6 +76,23 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
       date: monthsDate,
       locale: propList.locale,
     });
+
+    // Compute range boundaries once, outside the per-day loop
+    const [starts, ends] = [
+      propList.startsWithDate
+        ? new Date(propList.startsWithDate).getTime()
+        : undefined,
+      propList.endsWithDate
+        ? new Date(propList.endsWithDate).getTime()
+        : undefined,
+    ].sort() as number[];
+    const [startsBeforeSelect, endsBeforeSelect] = [
+      propList.startsWithDate
+        ? new Date(propList.startsWithDate).getTime()
+        : undefined,
+      new Date(willBeRangesEndsWith).getTime(),
+    ].sort() as number[];
+
     const offset = Array(monthsDateData.firstMonthDate).fill("");
     const days = Array.from(
       Array(monthsDateData.amountOfDaysInAMonth).keys()
@@ -101,31 +116,19 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
       const daysName = daysFullDateWithTime.toLocaleString(propList.locale, {
         weekday: "long",
       });
-      const [starts, ends] = [
-        propList.startsWithDate
-          ? new Date(propList.startsWithDate).getTime()
-          : undefined,
-        propList.endsWithDate
-          ? new Date(propList.endsWithDate).getTime()
-          : undefined,
-      ].sort() as number[];
-      const [startsBeforeSelect, endsBeforeSelect] = [
-        propList.startsWithDate
-          ? new Date(propList.startsWithDate).getTime()
-          : undefined,
-        new Date(willBeRangesEndsWith).getTime(),
-      ].sort() as number[];
 
-      const isInRanges =
-        daysFullDate.getTime() >= new Date(starts).getTime() &&
-        daysFullDate.getTime() <= new Date(ends).getTime();
+      const t = daysFullDate.getTime();
+      const isInRanges = t >= starts && t <= ends;
       const isInRangesBeforeSelect =
-        daysFullDate.getTime() >= startsBeforeSelect &&
-        daysFullDate.getTime() <= endsBeforeSelect &&
-        !propList.endsWithDate;
-
+        t >= startsBeforeSelect && t <= endsBeforeSelect && !propList.endsWithDate;
       const isActive =
         monthsDateData.activeDate == daysFullDate.toLocaleDateString();
+      const dayStr = daysFullDate.toLocaleDateString();
+      const isSelected =
+        (propList.startsWithDate != null &&
+          dayStr === new Date(propList.startsWithDate).toLocaleDateString()) ||
+        (propList.endsWithDate != null &&
+          dayStr === new Date(propList.endsWithDate).toLocaleDateString());
 
       function changeDate() {
         if (propList.endsWithDate) {
@@ -141,7 +144,7 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
       }
       return {
         dateSelectPropList: {
-          onMouseOver: () => changeWillBeRangesEndsWith(daysFullDate.getTime()),
+          onMouseEnter: () => changeWillBeRangesEndsWith(daysFullDate.getTime()),
           onMouseLeave: () => changeWillBeRangesEndsWith(0),
           onClick: changeDate,
           key: new Date(daysFullDate).getTime(),
@@ -149,6 +152,7 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
         daysNumber,
         daysName,
         isActive,
+        isSelected: !!isSelected,
         isInRanges,
         isInRangesBeforeSelect,
       };
@@ -157,14 +161,14 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
   }
 
   function selectPrev() {
-    const sf = startsFrom ?? new Date();
-    const updateDate = new Date(sf.setMonth(sf.getMonth() - 1));
-    changeStartsFrom(updateDate);
+    const sf = new Date(startsFrom ?? new Date());
+    sf.setMonth(sf.getMonth() - 1);
+    changeStartsFrom(sf);
   }
   function selectNext() {
-    const sf = startsFrom ?? new Date();
-    const updateDate = new Date(sf.setMonth(sf.getMonth() + 1));
-    changeStartsFrom(updateDate);
+    const sf = new Date(startsFrom ?? new Date());
+    sf.setMonth(sf.getMonth() + 1);
+    changeStartsFrom(sf);
   }
 
   return {

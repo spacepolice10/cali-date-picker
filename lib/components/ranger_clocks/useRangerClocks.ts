@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { coerceToDate } from "../createDate";
 
 export type useRangerClocksType = {
   startsWithDate?: Date | null;
@@ -37,9 +38,7 @@ export function useRangerClocks(
   propList: useRangerClocksType
 ): useRangerClocksReturnType {
   const [startsFrom, changeStartsFrom] = useState(
-    typeof propList.startsFromDate == "string"
-      ? new Date(propList.startsFromDate)
-      : propList.startsFromDate
+    coerceToDate(propList.startsFromDate)
   );
   const [willBeRangesEndsWith, changeWillBeRangesEndsWith] = useState<number>(0);
 
@@ -88,16 +87,24 @@ export function useRangerClocks(
             }
           }
         }
+        const isActive = date.toLocaleDateString() === new Date().toLocaleDateString();
+        const isSelected =
+          (propList.startsWithDate != null &&
+            date.getTime() === new Date(propList.startsWithDate).getTime()) ||
+          (propList.endsWithDate != null &&
+            date.getTime() === new Date(propList.endsWithDate).getTime());
         return {
+          isActive,
+          isSelected,
           isInRanges,
           isInRangesBeforeSelect,
           date,
           minute,
           timeSelectPropList: {
-            onMouseOver: () => changeWillBeRangesEndsWith(date.getTime()),
+            onMouseEnter: () => changeWillBeRangesEndsWith(date.getTime()),
             onMouseLeave: () => changeWillBeRangesEndsWith(0),
             onClick: changeTime,
-            key: new Date(date).getTime(),
+            key: `${new Date(date).getTime()}`,
           },
         };
       });
@@ -107,14 +114,14 @@ export function useRangerClocks(
   }
 
   function selectPrev() {
-    const sf = startsFrom ?? new Date();
-    const updateDate = new Date(sf.setMonth(sf.getDate() - 1));
-    changeStartsFrom(updateDate);
+    const sf = new Date(startsFrom ?? new Date());
+    sf.setDate(sf.getDate() - 1);
+    changeStartsFrom(sf);
   }
   function selectNext() {
-    const sf = startsFrom ?? new Date();
-    const updateDate = new Date(sf.setMonth(sf.getDate() + 1));
-    changeStartsFrom(updateDate);
+    const sf = new Date(startsFrom ?? new Date());
+    sf.setDate(sf.getDate() + 1);
+    changeStartsFrom(sf);
   }
 
   return {
