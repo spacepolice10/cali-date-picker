@@ -22,6 +22,13 @@ export type createDateReturnType = {
   firstMonthDate: number;
 };
 
+export const coerceToDate = (
+  date: Date | string | null | undefined
+): Date | undefined => {
+  if (date == null) return undefined;
+  return typeof date === "string" ? new Date(date) : date;
+};
+
 export const createDate = (propList?: createDateType): createDateReturnType => {
   const date =
     typeof propList?.date == "number" || typeof propList?.date == "string"

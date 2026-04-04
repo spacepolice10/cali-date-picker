@@ -4,7 +4,7 @@ export type useTimeformType = {
   date: Date;
   onChange: (date: Date) => void;
   locale?: string;
-  timezeon?: string;
+  timezone?: string;
 };
 
 export type useTimeformReturnType = {
