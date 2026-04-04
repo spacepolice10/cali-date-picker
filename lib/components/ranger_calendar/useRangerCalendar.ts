@@ -13,7 +13,6 @@ export type useRangerCalendarType = {
 };
 
 export type useRangerCalendarReturnType = {
-  combinedDate: Date | string;
   months: overrideGenerateListOfMonthsType;
   selectPrev: () => void;
   selectNext: () => void;
@@ -78,20 +77,18 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
     });
 
     // Compute range boundaries once, outside the per-day loop
-    const [starts, ends] = [
-      propList.startsWithDate
-        ? new Date(propList.startsWithDate).getTime()
-        : undefined,
-      propList.endsWithDate
-        ? new Date(propList.endsWithDate).getTime()
-        : undefined,
-    ].sort() as number[];
-    const [startsBeforeSelect, endsBeforeSelect] = [
-      propList.startsWithDate
-        ? new Date(propList.startsWithDate).getTime()
-        : undefined,
-      new Date(willBeRangesEndsWith).getTime(),
-    ].sort() as number[];
+    const startT = propList.startsWithDate
+      ? new Date(propList.startsWithDate).setHours(0, 0, 0, 0)
+      : undefined;
+    const endT = propList.endsWithDate
+      ? new Date(propList.endsWithDate).setHours(0, 0, 0, 0)
+      : undefined;
+    const starts = startT !== undefined && endT !== undefined ? Math.min(startT, endT) : startT;
+    const ends = startT !== undefined && endT !== undefined ? Math.max(startT, endT) : endT;
+
+    const hoverT = new Date(willBeRangesEndsWith).setHours(0, 0, 0, 0);
+    const startsBeforeSelect = startT !== undefined ? Math.min(startT, hoverT) : hoverT;
+    const endsBeforeSelect = startT !== undefined ? Math.max(startT, hoverT) : hoverT;
 
     const offset = Array(monthsDateData.firstMonthDate).fill("");
     const days = Array.from(
@@ -117,8 +114,8 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
         weekday: "long",
       });
 
-      const t = daysFullDate.getTime();
-      const isInRanges = t >= starts && t <= ends;
+      const t = daysFullDate.setHours(0, 0, 0, 0);
+      const isInRanges = starts !== undefined && ends !== undefined && t >= starts && t <= ends;
       const isInRangesBeforeSelect =
         t >= startsBeforeSelect && t <= endsBeforeSelect && !propList.endsWithDate;
       const isActive =
@@ -147,7 +144,7 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
           onMouseEnter: () => changeWillBeRangesEndsWith(daysFullDate.getTime()),
           onMouseLeave: () => changeWillBeRangesEndsWith(0),
           onClick: changeDate,
-          key: new Date(daysFullDate).getTime(),
+          key: `${daysFullDate.getTime()}`,
         },
         daysNumber,
         daysName,
@@ -161,18 +158,17 @@ export const useRangerCalendar = (propList: useRangerCalendarType) => {
   }
 
   function selectPrev() {
-    const sf = new Date(startsFrom ?? new Date());
+    const sf = new Date(startsFrom ?? propList.startsWithDate ?? new Date());
     sf.setMonth(sf.getMonth() - 1);
     changeStartsFrom(sf);
   }
   function selectNext() {
-    const sf = new Date(startsFrom ?? new Date());
+    const sf = new Date(startsFrom ?? propList.startsWithDate ?? new Date());
     sf.setMonth(sf.getMonth() + 1);
     changeStartsFrom(sf);
   }
 
   return {
-    combinedDate: "",
     months: overrideGenerateListOfMonths(),
     selectPrev,
     selectNext,

@@ -102,9 +102,9 @@ export const useCalendar = (propList: useCalendarType) => {
         weekday: "long",
       });
 
-      const isActive = monthsDateData.activeDate == daysFullDate;
+      const isActive = monthsDateData.activeDate === daysFullDate;
       const isSelected =
-        new Date(propList.date).toLocaleDateString() == daysFullDate;
+        (coerceToDate(propList.date)?.toLocaleDateString() ?? "") === daysFullDate;
 
       function selectDate() {
         propList?.onChange(daysFullDateWithTime);
@@ -125,12 +125,12 @@ export const useCalendar = (propList: useCalendarType) => {
   }
 
   function selectPrev() {
-    const sf = new Date(startsFrom ?? new Date());
+    const sf = new Date(startsFrom ?? coerceToDate(propList.date) ?? new Date());
     sf.setMonth(sf.getMonth() - 1);
     changeStartsFrom(sf);
   }
   function selectNext() {
-    const sf = new Date(startsFrom ?? new Date());
+    const sf = new Date(startsFrom ?? coerceToDate(propList.date) ?? new Date());
     sf.setMonth(sf.getMonth() + 1);
     changeStartsFrom(sf);
   }

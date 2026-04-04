@@ -5,7 +5,6 @@ export type useRangerClocksType = {
   startsWithDate?: Date | null;
   endsWithDate?: Date | null;
   startsFromDate?: Date | null;
-  daysNumberToDraw?: number;
   locale?: string;
   timezone?: string;
   onStartsWithDateChange: (date: Date | string | null) => void;
@@ -42,18 +41,18 @@ export function useRangerClocks(
   );
   const [willBeRangesEndsWith, changeWillBeRangesEndsWith] = useState<number>(0);
 
-  const [starts, ends] = [
-    propList.startsWithDate
-      ? new Date(propList.startsWithDate).getTime()
-      : undefined,
-    propList.endsWithDate ? new Date(propList.endsWithDate).getTime() : undefined,
-  ].sort() as number[];
-  const [startsBeforeSelect, endsBeforeSelect] = [
-    propList.startsWithDate
-      ? new Date(propList.startsWithDate).getTime()
-      : undefined,
-    new Date(willBeRangesEndsWith).getTime(),
-  ].sort() as number[];
+  const startT = propList.startsWithDate
+    ? new Date(propList.startsWithDate).getTime()
+    : undefined;
+  const endT = propList.endsWithDate
+    ? new Date(propList.endsWithDate).getTime()
+    : undefined;
+  const starts = startT !== undefined && endT !== undefined ? Math.min(startT, endT) : startT;
+  const ends = startT !== undefined && endT !== undefined ? Math.max(startT, endT) : endT;
+
+  const hoverT = new Date(willBeRangesEndsWith).getTime();
+  const startsBeforeSelect = startT !== undefined ? Math.min(startT, hoverT) : hoverT;
+  const endsBeforeSelect = startT !== undefined ? Math.max(startT, hoverT) : hoverT;
   function generateTimeList(): generateTimeListType {
     const timeList = [];
     for (let hour = 0; hour < 24; hour++) {
@@ -70,7 +69,7 @@ export function useRangerClocks(
           minute: "2-digit",
         });
 
-        const isInRanges = date.getTime() >= starts && date.getTime() <= ends;
+        const isInRanges = starts !== undefined && ends !== undefined && date.getTime() >= starts && date.getTime() <= ends;
         const isInRangesBeforeSelect =
           date.getTime() >= startsBeforeSelect &&
           date.getTime() <= endsBeforeSelect &&
@@ -124,13 +123,16 @@ export function useRangerClocks(
     changeStartsFrom(sf);
   }
 
+  const combinedData =
+    propList.startsWithDate != null && propList.endsWithDate != null
+      ? [
+          new Date(Math.min(new Date(propList.startsWithDate).getTime(), new Date(propList.endsWithDate).getTime())).toLocaleTimeString(propList.locale),
+          new Date(Math.max(new Date(propList.startsWithDate).getTime(), new Date(propList.endsWithDate).getTime())).toLocaleTimeString(propList.locale),
+        ].join(" ")
+      : "";
+
   return {
-    combinedData: [
-      propList.startsWithDate?.toLocaleTimeString(),
-      propList.endsWithDate?.toLocaleTimeString(),
-    ]
-      .sort()
-      .join(" "),
+    combinedData,
     time: generateTimeList(),
     selectPrev,
     selectNext,
