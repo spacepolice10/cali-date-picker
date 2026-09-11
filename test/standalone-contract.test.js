@@ -130,3 +130,20 @@ for (const [file, className, defineName, tagName] of widgets) {
     }
   });
 }
+
+test("every distribution module is minified, standalone, and source-mapped", async () => {
+  for (const file of ["main", ...widgets.map(([name]) => name)]) {
+    const moduleUrl = new URL(`../lib/${file}.min.js`, import.meta.url);
+    const mapUrl = new URL(`../lib/${file}.min.js.map`, import.meta.url);
+    const source = await readFile(moduleUrl, "utf8");
+    const sourceMap = JSON.parse(await readFile(mapUrl, "utf8"));
+
+    assert.doesNotMatch(source, /^\s*import\s/m, `${file} has no imports`);
+    assert.match(
+      source,
+      new RegExp(`//# sourceMappingURL=${file}\\.min\\.js\\.map\\s*$`),
+      `${file} links its source map`
+    );
+    assert.ok(sourceMap.sources.length > 0, `${file} map contains sources`);
+  }
+});

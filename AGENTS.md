@@ -4,6 +4,8 @@
 
 Every widget file directly under `lib/` is a complete, standalone ES module. A consumer must be able to copy exactly one widget file into another project and use it without installing this package or copying another source file.
 
+Readable `*.js` files are the source of truth. Their generated `*.min.js` and `*.min.js.map` siblings are distribution artifacts; never edit them manually. Run `npm run minify` after changing any source module. `lib/main.min.js` intentionally bundles all widgets, while each individual minified widget remains standalone.
+
 Do not add imports to a widget file. Do not move runtime helpers into a shared module. Duplication of small infrastructure helpers is intentional because standalone distribution is a product feature.
 
 ## Public widgets
