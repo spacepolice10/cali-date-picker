@@ -16,199 +16,71 @@
     <title>Cali Date Picker</title>
   </head>
   <body>
-    <aside class="sidebar">
-      <a class="brand" href="#overview" aria-label="Cali Date Picker home">
-        <span class="brand__mark" aria-hidden="true">C</span>
-        <span><strong>Cali</strong><small>Date Picker</small></span>
-      </a>
-      <nav class="navigation" aria-label="Demo sections">
-        <a href="#overview">Overview</a><a href="#date">Date</a>
-        <a href="#time">Time</a><a href="#ranges">Ranges</a>
-        <a href="#form-data">Form data</a>
-      </nav>
-      <p class="sidebar__note">
-        Six standalone web components. Zero runtime dependencies.
-      </p>
-    </aside>
-
     <main>
-      <header class="page-header" id="overview">
-        <div>
-          <p class="eyebrow">Component playground</p>
-          <h1>Date and time controls that stay out of your way.</h1>
-          <p class="lede">
-            Import one JavaScript file, use one custom element, and theme every
-            exposed part from your own CSS.
-          </p>
-        </div>
-        <div class="toolbar" aria-label="Demo settings">
-          <label
-            ><span>Locale</span
-            ><select id="locale">
-              <option value="en-US">English · US</option>
-              <option value="en-GB">English · UK</option>
-              <option value="vi-VN">Tiếng Việt</option>
-              <option value="ja-JP">日本語</option>
-            </select></label
-          >
-          <button class="theme-toggle" id="theme-toggle" type="button">
-            <span aria-hidden="true">◐</span> Theme
-          </button>
-        </div>
-      </header>
-
-      <section class="summary" aria-label="Current selection">
-        <div><span>Selected date</span><output id="selected-date">—</output></div>
-        <div><span>Selected time</span><output id="selected-time">—</output></div>
-        <code>npm i cali-date-picker</code>
-      </section>
+      <label
+        >Locale
+        <select id="locale">
+          <option value="en-US">English · US</option>
+          <option value="en-GB">English · UK</option>
+          <option value="vi-VN">Tiếng Việt</option>
+          <option value="ja-JP">日本語</option>
+        </select>
+      </label>
 
       <form id="demo-form">
-        <section class="demo-section" id="date">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Date</p>
-              <h2>One value, two interfaces</h2>
-            </div>
-            <p>
-              Pick visually or type directly. Both controls stay synchronized.
-            </p>
-          </div>
-          <div class="showcase-grid showcase-grid--date">
-            <article class="component-card component-card--featured">
-              <div class="component-card__heading">
-                <div>
-                  <h3>Calendar</h3>
-                  <code>&lt;cali-calendar&gt;</code>
-                </div>
-                <span class="badge">Interactive</span>
-              </div>
-              <div class="canvas">
-                <cali-calendar
-                  name="date"
-                  months-number-to-draw="1"
-                ></cali-calendar>
-              </div>
-            </article>
-            <article class="component-card">
-              <div class="component-card__heading">
-                <div>
-                  <h3>Date form</h3>
-                  <code>&lt;cali-dateform&gt;</code>
-                </div>
-              </div>
-              <div class="canvas canvas--compact">
-                <cali-dateform name="date-fields"></cali-dateform>
-              </div>
-              <p class="component-card__note">
-                Editable year, month, and day fields.
-              </p>
-            </article>
-          </div>
+        <section id="date">
+          <h2>Date</h2>
+          <article>
+            <h3>Calendar</h3>
+            <cali-calendar name="date" months-number-to-draw="1"></cali-calendar>
+          </article>
+          <article>
+            <h3>Date form</h3>
+            <cali-dateform name="date-fields"></cali-dateform>
+          </article>
         </section>
 
-        <section class="demo-section" id="time">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Time</p>
-              <h2>Precise or quick</h2>
-            </div>
-            <p>
-              Scroll through time fragments or edit the value as compact fields.
-            </p>
-          </div>
-          <div class="showcase-grid showcase-grid--time">
-            <article class="component-card component-card--featured">
-              <div class="component-card__heading">
-                <div>
-                  <h3>Clocks</h3>
-                  <code>&lt;cali-clocks&gt;</code>
-                </div>
-              </div>
-              <div class="canvas"><cali-clocks name="time"></cali-clocks></div>
-            </article>
-            <article class="component-card">
-              <div class="component-card__heading">
-                <div>
-                  <h3>Time form</h3>
-                  <code>&lt;cali-timeform&gt;</code>
-                </div>
-              </div>
-              <div class="canvas canvas--compact">
-                <cali-timeform name="time-fields"></cali-timeform>
-              </div>
-              <p class="component-card__note">
-                Hours, minutes, and seconds in one compact row.
-              </p>
-            </article>
-          </div>
+        <section id="time">
+          <h2>Time</h2>
+          <article>
+            <h3>Clocks</h3>
+            <cali-clocks name="time"></cali-clocks>
+          </article>
+          <article>
+            <h3>Time form</h3>
+            <cali-timeform name="time-fields"></cali-timeform>
+          </article>
         </section>
 
-        <section class="demo-section" id="ranges">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Ranges</p>
-              <h2>Start and end, without extra plumbing</h2>
+        <section id="ranges">
+          <h2>Ranges</h2>
+          <article>
+            <h3>Calendar range</h3>
+            <div class="overflow">
+              <cali-ranger-calendar
+                name="from"
+                end-name="to"
+                months-number-to-draw="2"
+              ></cali-ranger-calendar>
             </div>
-            <p>
-              Select two values; hover previews the interval before committing it.
-            </p>
-          </div>
-          <div class="showcase-grid showcase-grid--ranges">
-            <article class="component-card component-card--featured">
-              <div class="component-card__heading">
-                <div>
-                  <h3>Calendar range</h3>
-                  <code>&lt;cali-ranger-calendar&gt;</code>
-                </div>
-              </div>
-              <div class="canvas canvas--wide">
-                <cali-ranger-calendar
-                  name="from"
-                  end-name="to"
-                  months-number-to-draw="2"
-                ></cali-ranger-calendar>
-              </div>
-            </article>
-            <article class="component-card">
-              <div class="component-card__heading">
-                <div>
-                  <h3>Time range</h3>
-                  <code>&lt;cali-ranger-clocks&gt;</code>
-                </div>
-              </div>
-              <div class="canvas">
-                <cali-ranger-clocks
-                  name="start-time"
-                  end-name="end-time"
-                ></cali-ranger-clocks>
-              </div>
-            </article>
-          </div>
+          </article>
+          <article>
+            <h3>Time range</h3>
+            <cali-ranger-clocks
+              name="start-time"
+              end-name="end-time"
+            ></cali-ranger-clocks>
+          </article>
         </section>
 
-        <section class="form-panel" id="form-data">
-          <div>
-            <p class="eyebrow">Native forms</p>
-            <h2>See what the browser submits</h2>
-            <p>
-              Every component participates in the surrounding form without a
-              framework.
-            </p>
-          </div>
-          <button type="submit">
-            Inspect form data <span aria-hidden="true">→</span>
-          </button>
+        <section id="form-data">
+          <h2>Form data</h2>
+          <button type="submit">Inspect</button>
           <pre
             aria-live="polite"
           ><code id="form-output">Select values, then inspect the form.</code></pre>
         </section>
       </form>
-
-      <footer>
-        <strong>Cali Date Picker</strong
-        ><span>Plain JavaScript · Form-associated · Themeable parts</span>
-      </footer>
     </main>
     <script type="module" src="./demo.js"></script>
   </body>

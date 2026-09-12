@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { syncFormState } from "../lib/shared.js";
+
 globalThis.HTMLElement = class HTMLElement {};
 
 const registry = new Map();
@@ -40,17 +42,14 @@ const widgets = [
 ];
 
 for (const [file, className, defineName, tagName] of widgets) {
-  test(`${tagName} remains a standalone module with the common control contract`, async () => {
+  test(`${tagName} source entry retains the common control contract`, async () => {
     const url = new URL(`../lib/${file}.js`, import.meta.url);
     const source = await readFile(url, "utf8");
 
-    assert.doesNotMatch(
-      source,
-      /^\s*import\s/m,
-      "standalone files cannot import dependencies"
-    );
+    assert.match(source, /from "\.\/shared\.js";/);
     assert.match(source, /const FORM_ATTRIBUTES = \[/);
     assert.match(source, /const ATTRIBUTE_PROPERTIES = \{/);
+    assert.doesNotMatch(source, /const STYLES|createNode\("style"/);
     assert.doesNotMatch(source, /color-scheme|light-dark\(|#[\da-f]{3,8}/i);
     assert.doesNotMatch(source, /outline:\s*none|background:\s*transparent/i);
 
@@ -58,7 +57,6 @@ for (const [file, className, defineName, tagName] of widgets) {
       "helpers",
       "dates",
       "configuration",
-      "styles",
       "view components",
       "behavior",
       "view",
@@ -97,6 +95,15 @@ for (const [file, className, defineName, tagName] of widgets) {
     ]) {
       assert.ok(Constructor.observedAttributes.includes(attribute), attribute);
     }
+    if (tagName === "cali-ranger-clocks") {
+      assert.ok(Constructor.observedAttributes.includes("minutes-step"));
+      const descriptor = Object.getOwnPropertyDescriptor(
+        Constructor.prototype,
+        "minutesStep"
+      );
+      assert.equal(typeof descriptor?.get, "function");
+      assert.equal(typeof descriptor?.set, "function");
+    }
 
     for (const method of [
       "connectedCallback",
@@ -131,7 +138,7 @@ for (const [file, className, defineName, tagName] of widgets) {
   });
 }
 
-test("every distribution module is minified, standalone, and source-mapped", async () => {
+test("every distribution module is bundled, standalone, and source-mapped", async () => {
   for (const file of ["main", ...widgets.map(([name]) => name)]) {
     const moduleUrl = new URL(`../lib/${file}.min.js`, import.meta.url);
     const mapUrl = new URL(`../lib/${file}.min.js.map`, import.meta.url);
@@ -146,4 +153,49 @@ test("every distribution module is minified, standalone, and source-mapped", asy
     );
     assert.ok(sourceMap.sources.length > 0, `${file} map contains sources`);
   }
+});
+
+test("form state uses ElementInternals without compatibility inputs", () => {
+  let submitted;
+  let validity;
+  const attributes = new Map();
+  const element = {
+    disabled: false,
+    readOnly: false,
+    _internals: {
+      setFormValue(value) {
+        submitted = value;
+      },
+      setValidity(flags, message) {
+        validity = { flags, message };
+      },
+    },
+    setAttribute(name, value) {
+      attributes.set(name, value);
+    },
+    toggleAttribute(name, enabled) {
+      if (enabled) attributes.set(name, "");
+      else attributes.delete(name);
+    },
+  };
+
+  syncFormState(
+    element,
+    [
+      ["booking", "2026-09-12"],
+      ["booking-end", "2026-09-14"],
+    ],
+    false
+  );
+
+  assert.deepEqual(
+    [...submitted],
+    [
+      ["booking", "2026-09-12"],
+      ["booking-end", "2026-09-14"],
+    ]
+  );
+  assert.deepEqual(validity.flags, {});
+  assert.equal(attributes.get("aria-disabled"), "false");
+  assert.equal("querySelector" in element, false);
 });

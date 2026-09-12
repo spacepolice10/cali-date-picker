@@ -1,6 +1,6 @@
 # Cali Date Picker
 
-Self-contained date and time widgets as custom elements. Import a single widget file; nothing shared is required.
+Self-contained date and time widgets as custom elements. Use a minified standalone bundle directly, or import the readable source together with its shared infrastructure module.
 
 The repository root also contains a dependency-free interactive demo used by GitHub Pages. Open `index.html` through any static HTTP server to explore all six widgets.
 
@@ -20,7 +20,7 @@ The repository root also contains a dependency-free interactive demo used by Git
 
 ## CDN
 
-Every readable module has a committed minified counterpart and source map. Load one widget directly from jsDelivr without publishing to npm:
+Every public module has a committed standalone bundle and source map. Load one widget directly from jsDelivr without publishing to npm:
 
 ```html
 <script
@@ -46,7 +46,7 @@ Single-date widgets expose a `date` property and emit `change` with that `Date`.
 
 ## Usage
 
-Each component file is a dependency-free ES module and registers its default tag when imported:
+Each readable component is an ES module entry point and registers its default tag when imported. Keep `shared.js` beside it when using source files directly:
 
 ```html
 <script type="module" src="./calendar.js"></script>
@@ -61,29 +61,34 @@ import { defineCalendar } from "./calendar.js";
 defineCalendar("booking-calendar");
 ```
 
-All widgets support `name`, `value`, `disabled`, `required`, `readonly`, `form`, `autocomplete`, `locale`, and `timezone`. Calendar variants also support `starts-from-date`; range variants support `starts-with-date`, `ends-with-date`, and `end-name`.
+All widgets support `name`, `value`, `disabled`, `required`, `readonly`, `form`, `autocomplete`, `locale`, and `timezone`. Calendar variants also support `starts-from-date`; range variants support `starts-with-date`, `ends-with-date`, and `end-name`. `cali-ranger-clocks` supports `minutes-step` (default `5`) to control its selectable time interval.
 
 ## Styling
 
-The shadow styles only provide layout, scrolling, and state hooks. Typography, control appearance, colors, focus indicators, and color scheme remain native or inherited until the consuming page themes them.
-
-Place application defaults in a cascade layer and style exposed parts or inherited custom properties:
+Widgets install no CSS. Their Shadow DOM preserves markup encapsulation while exposed parts let each application control layout and appearance. Style parts from the consuming page:
 
 ```css
 @layer cali {
   cali-calendar {
-    --cali-selected-bg: Highlight;
-    --cali-hover-bg: color-mix(in srgb, currentColor 10%, transparent);
-    --cali-radius: 0.5rem;
+    display: block;
+  }
+
+  cali-calendar::part(calendar) {
+    display: grid;
   }
 
   cali-calendar::part(date) {
     font: inherit;
   }
+
+  cali-calendar::part(selected) {
+    background: Highlight;
+    color: HighlightText;
+  }
 }
 ```
 
-Available theme properties are `--cali-selected-bg`, `--cali-selected-color`, `--cali-active-bg`, `--cali-range-bg`, `--cali-preview-bg`, `--cali-hover-bg`, `--cali-subtle`, `--cali-radius`, `--cali-column-height`, and `--cali-list-height`. A declaration that is not supplied by the page has no component color or shape fallback; the browser’s native presentation remains in control. The two scrolling heights retain structural fallbacks of `10rem` and `16rem`.
+Structural parts include `calendar`, `clocks`, `dateform`, `timeform`, `ranger-calendar`, `ranger-clocks`, `header`, `navigation`, `fields`, `days`, `times`, `date`, `unit`, and `slot`. State parts such as `active`, `selected`, `in-range`, and `preview` are added alongside the structural part.
 
 ## Development
 
@@ -94,6 +99,6 @@ npm run minify
 npm test
 ```
 
-The minifier discovers new `lib/*.js` files automatically. Widget files remain independent modules; `main.min.js` is the only bundled output and contains all widgets.
+The minifier discovers public `lib/*.js` entry points automatically and bundles their imports. Every `*.min.js` widget is an independent copy-paste file; `main.min.js` contains all widgets. Shared infrastructure remains readable in `lib/shared.js` without becoming a separate distribution requirement.
 
 See [AGENTS.md](./AGENTS.md) for the file schema, compatibility constraints, and maintenance checklist.

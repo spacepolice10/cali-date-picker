@@ -13,39 +13,18 @@ const singleValueWidgets = [
   ),
 ];
 const localeSelect = document.querySelector("#locale");
-const dateOutput = document.querySelector("#selected-date");
-const timeOutput = document.querySelector("#selected-time");
-
-function updateSummary(date) {
-  dateOutput.value = date.toLocaleDateString(localeSelect.value, {
-    dateStyle: "full",
-  });
-  timeOutput.value = date.toLocaleTimeString(localeSelect.value, {
-    timeStyle: "medium",
-  });
-}
 
 for (const widget of singleValueWidgets) {
   widget.addEventListener("change", ({ detail: date }) => {
     for (const otherWidget of singleValueWidgets) {
       if (otherWidget !== widget) otherWidget.date = date;
     }
-    updateSummary(date);
   });
 }
 
 localeSelect.addEventListener("change", () => {
   for (const widget of document.querySelectorAll(widgetSelector))
     widget.locale = localeSelect.value;
-  updateSummary(singleValueWidgets[0].date);
-});
-
-document.querySelector("#theme-toggle").addEventListener("click", () => {
-  const root = document.documentElement;
-  const isDark =
-    root.dataset.theme === "dark" ||
-    (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
-  root.dataset.theme = isDark ? "light" : "dark";
 });
 
 document.querySelector("#demo-form").addEventListener("submit", (event) => {
@@ -60,4 +39,3 @@ document.querySelector("#demo-form").addEventListener("submit", (event) => {
 
 for (const widget of document.querySelectorAll(widgetSelector))
   widget.locale = localeSelect.value;
-updateSummary(singleValueWidgets[0].date);

@@ -6,9 +6,15 @@ import { build } from "esbuild";
 const projectDirectory = dirname(fileURLToPath(import.meta.url));
 const libraryDirectory = join(projectDirectory, "lib");
 const checkOnly = process.argv.includes("--check");
+const internalFiles = new Set(["shared.js"]);
 
 const sourceFiles = (await readdir(libraryDirectory))
-  .filter((name) => name.endsWith(".js") && !name.endsWith(".min.js"))
+  .filter(
+    (name) =>
+      name.endsWith(".js") &&
+      !name.endsWith(".min.js") &&
+      !internalFiles.has(name)
+  )
   .sort();
 
 const changedFiles = [];
@@ -19,7 +25,7 @@ for (const sourceFile of sourceFiles) {
   const result = await build({
     entryPoints: [join(libraryDirectory, sourceFile)],
     outfile: outputPath,
-    bundle: sourceFile === "main.js",
+    bundle: true,
     format: "esm",
     legalComments: "none",
     minify: true,
