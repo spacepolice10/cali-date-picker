@@ -3,84 +3,272 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Minimal Cali Calendar</title>
-    <script type="module" src="./calendar.js?v=year-list-2"></script>
+    <title>Cali Calendar</title>
     <style>
+      :root {
+        --primary-color: #181818;
+        --secondary-color: #fff;
+        --accent-color: #046FD7;
+
+        --space-v: 5px;
+        --space-h: 10px;
+
+        --w-max: 500px;
+
+        @media (prefers-color-scheme: dark) {
+          --primary-color: #fff;
+          --secondary-color: #181818;
+          --accent-color: #B0E7F4;
+        }
+      }
+
+      body {
+        max-width: var(--w-max);
+        margin: 0 auto;
+        padding: var(--space-h);
+        font-family: monospace;
+        background-color: var(--secondary-color);
+        color: var(--primary-color);
+      }
+
+      a {
+        color: var(--accent-color);
+      }
+
+      ul > li {
+        margin-block: var(--space-v);
+      }
+
+      h1,
+      h2 {
+        font-size: 1rem;
+      }
+
+      h1 {
+        font-size: 1.25rem;
+      }
+
+      p,
+      pre {
+        margin-block: var(--space-h);
+      }
+
+      section {
+        padding-block: calc(var(--space-h) * 2);
+        border-top: 1px solid;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      pre {
+        overflow: auto;
+        padding: var(--space-h);
+        border: 1px solid;
+        white-space: pre-wrap;
+      }
+
+      output {
+        display: block;
+        min-height: 1.2em;
+      }
+
+      cali-calendar {
+        display: block;
+      }
+
+      cali-calendar::part(period-switcher) {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-v);
+        margin-block-end: var(--space-h);
+      }
+
       cali-calendar::part(calendar) {
         display: grid;
-        grid-template-columns: repeat(7, 2.5rem);
-        gap: 0.25rem;
+        gap: var(--space-v);
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+      }
+
+      cali-calendar[data-view="months"]::part(calendar) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      cali-calendar[data-view="year"]::part(calendar) {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
       }
 
       cali-calendar::part(weekday) {
         text-align: center;
-        font-weight: bold;
+        opacity: 0.6;
       }
 
-      cali-calendar::part(day) {
-        aspect-ratio: 1;
+      cali-calendar::part(offset) {
+        min-height: 1.5em;
+      }
+
+      cali-calendar::part(previous),
+      cali-calendar::part(next),
+      cali-calendar::part(view-months),
+      cali-calendar::part(view-year),
+      cali-calendar::part(day),
+      cali-calendar::part(month),
+      cali-calendar::part(year) {
+        font: inherit;
+        color: inherit;
+        background: transparent;
         border: 1px solid transparent;
-        border-radius: 50%;
+        padding: var(--space-v);
       }
 
       cali-calendar::part(current-day) {
-        border-color: #2563eb;
-        color: #1d4ed8;
-        font-weight: bold;
+        border-color: var(--accent-color);
       }
 
-      cali-calendar::part(selected-day) {
-        border-color: #1d4ed8;
-        background: #2563eb;
-        color: white;
+      cali-calendar::part(selected-view),
+      cali-calendar::part(selected-day),
+      cali-calendar::part(selected-month),
+      cali-calendar::part(selected-year) {
+        background: var(--accent-color);
+        color: var(--secondary-color);
       }
     </style>
   </head>
   <body>
     <header>
-      <h1>Minimal Cali Calendar</h1>
-      <p>Each calendar renders one complete month.</p>
+      <h1>Cali Calendar</h1>
+      <p>
+        One month at a time. Attributes configure the grid; CSS parts and
+        <code>data-view</code> style the rest.
+      </p>
     </header>
 
+    <nav>
+      <ul>
+        <li><a href="#hooks">Style hooks</a></li>
+        <li><a href="#bare">Bare month</a></li>
+        <li><a href="#weekdays">Weekdays</a></li>
+        <li><a href="#offset">Offset cells</a></li>
+        <li><a href="#monday">Monday first</a></li>
+        <li><a href="#switcher">Period switcher</a></li>
+        <li><a href="#selected">Selected vs today</a></li>
+        <li><a href="#open">Open on a month</a></li>
+        <li><a href="#form">Form value</a></li>
+        <li><a href="#events">change / beforechange</a></li>
+        <li><a href="#js">year / month from JS</a></li>
+      </ul>
+    </nav>
+
     <main>
-      <section>
-        <h2>Current month</h2>
-        <form>
-          <cali-calendar name="current-month"></cali-calendar>
-          <button>Submit selected date</button>
-        </form>
+      <section id="hooks">
+        <h2>Style hooks</h2>
+        <p>Host state:</p>
+        <ul>
+          <li><code>[data-view="days"]</code></li>
+          <li><code>[data-view="months"]</code></li>
+          <li><code>[data-view="year"]</code></li>
+        </ul>
+        <p>Elements and states:</p>
+        <ul>
+          <li><code>::part(period-switcher)</code></li>
+          <li><code>::part(previous)</code> / <code>::part(next)</code></li>
+          <li><code>::part(view-months)</code> / <code>::part(view-year)</code> / <code>::part(selected-view)</code></li>
+          <li><code>::part(calendar)</code></li>
+          <li><code>::part(weekday)</code></li>
+          <li><code>::part(offset)</code></li>
+          <li><code>::part(day)</code> / <code>::part(current-day)</code> / <code>::part(selected-day)</code></li>
+          <li><code>::part(month)</code> / <code>::part(selected-month)</code></li>
+          <li><code>::part(year)</code> / <code>::part(selected-year)</code></li>
+        </ul>
+        <pre>cali-calendar[data-view="months"]::part(calendar) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+cali-calendar::part(current-day) {
+  border-color: var(--accent-color);
+}
+
+cali-calendar::part(selected-view),
+cali-calendar::part(selected-day),
+cali-calendar::part(selected-month),
+cali-calendar::part(selected-year) {
+  background: var(--accent-color);
+  color: var(--secondary-color);
+}</pre>
       </section>
 
-      <section>
-        <h2>Current month with Sunday-first grid alignment</h2>
-        <p id="selected-date"></p>
-        <cali-calendar
-        id="calendar-1"
-          with-weekdays
-          with-offset
-          with-switcher
-        ></cali-calendar>
-        <script nonce="1234567890">
-          const calendar = document.getElementById("calendar-1");
-          calendar.addEventListener("change", (event) => {
-            console.log(event.detail.date);
-            document.getElementById("selected-date").textContent = event.detail.date;
-          });
-        </script>
+      <section id="bare">
+        <h2>Bare month</h2>
+        <p>No attributes. Current month, day buttons only.</p>
+        <pre>&lt;cali-calendar&gt;&lt;/cali-calendar&gt;</pre>
+        <cali-calendar></cali-calendar>
       </section>
 
-      <section>
-        <h2>Current month, Monday first</h2>
+      <section id="weekdays">
+        <h2>Weekdays</h2>
+        <p>
+          Labels in the first row. Without offset, the 1st still starts in
+          column one.
+        </p>
+        <pre>&lt;cali-calendar with-weekdays&gt;&lt;/cali-calendar&gt;</pre>
+        <cali-calendar with-weekdays></cali-calendar>
+      </section>
+
+      <section id="offset">
+        <h2>Offset cells</h2>
+        <p>Empty leading cells so the 1st lines up with its weekday.</p>
+        <pre>&lt;cali-calendar with-weekdays with-offset&gt;&lt;/cali-calendar&gt;</pre>
+        <cali-calendar with-weekdays with-offset></cali-calendar>
+      </section>
+
+      <section id="monday">
+        <h2>Monday first</h2>
+        <p>Week starts on Monday. Default is Sunday.</p>
+        <pre>&lt;cali-calendar
+  week-starts-on="mo"
+  with-weekdays
+  with-offset
+&gt;&lt;/cali-calendar&gt;</pre>
         <cali-calendar
           week-starts-on="mo"
           with-weekdays
           with-offset
+        ></cali-calendar>
+      </section>
+
+      <section id="switcher">
+        <h2>Period switcher</h2>
+        <p>
+          Prev / next move the period. Month and year buttons toggle
+          <code>data-view</code> and pick up <code>selected-view</code> while
+          that panel is open.
+        </p>
+        <pre>&lt;cali-calendar
+  with-weekdays
+  with-offset
+  with-switcher
+&gt;&lt;/cali-calendar&gt;</pre>
+        <cali-calendar
+          with-weekdays
+          with-offset
           with-switcher
         ></cali-calendar>
       </section>
 
-      <section>
-        <h2>Preselected date</h2>
+      <section id="selected">
+        <h2>Selected vs today</h2>
+        <p>
+          <code>value</code> paints <code>selected-day</code>. Today keeps
+          <code>current-day</code> even when it is not selected.
+        </p>
+        <pre>&lt;cali-calendar
+  value="2026-09-13"
+  week-starts-on="mo"
+  with-weekdays
+  with-offset
+  with-switcher
+&gt;&lt;/cali-calendar&gt;</pre>
         <cali-calendar
           value="2026-09-13"
           week-starts-on="mo"
@@ -89,6 +277,131 @@
           with-switcher
         ></cali-calendar>
       </section>
+
+      <section id="open">
+        <h2>Open on a month</h2>
+        <p>
+          <code>year</code> and <code>month</code> set the initial view when
+          there is no <code>value</code>.
+        </p>
+        <pre>&lt;cali-calendar
+  year="2025"
+  month="12"
+  with-weekdays
+  with-offset
+  with-switcher
+&gt;&lt;/cali-calendar&gt;</pre>
+        <cali-calendar
+          year="2025"
+          month="12"
+          with-weekdays
+          with-offset
+          with-switcher
+        ></cali-calendar>
+      </section>
+
+      <section id="form">
+        <h2>Form value</h2>
+        <p>
+          Form-associated: <code>name</code> submits ISO <code>YYYY-MM-DD</code>.
+          Reset clears <code>value</code>.
+        </p>
+        <pre>&lt;form&gt;
+  &lt;cali-calendar name="booking" with-weekdays with-offset&gt;&lt;/cali-calendar&gt;
+  &lt;button&gt;Submit&lt;/button&gt;
+  &lt;button type="reset"&gt;Reset&lt;/button&gt;
+&lt;/form&gt;</pre>
+        <form id="booking-form">
+          <cali-calendar
+            name="booking"
+            with-weekdays
+            with-offset
+          ></cali-calendar>
+          <p>
+            <button>Submit</button>
+            <button type="reset">Reset</button>
+          </p>
+          <output id="booking-out"></output>
+        </form>
+      </section>
+
+      <section id="events">
+        <h2>change / beforechange</h2>
+        <p>
+          <code>change</code> reports the date.
+          <code>beforechange</code> is cancelable — this one rejects Sundays.
+        </p>
+        <pre>calendar.addEventListener("beforechange", (event) => {
+  const date = new Date(`${event.detail.date}T00:00`);
+  if (date.getDay() === 0) event.preventDefault();
+});</pre>
+        <cali-calendar
+          id="guarded"
+          week-starts-on="mo"
+          with-weekdays
+          with-offset
+        ></cali-calendar>
+        <output id="guarded-out">Pick a date. Sundays stay unselected.</output>
+      </section>
+
+      <section id="js">
+        <h2>year / month from JS</h2>
+        <p>
+          After connect, drive the visible period with
+          <code>.year</code> and <code>.month</code>.
+        </p>
+        <pre>calendar.year = 2025;
+calendar.month = 12;</pre>
+        <p>
+          <button type="button" id="to-today">This month</button>
+          <button type="button" id="to-december">December 2025</button>
+        </p>
+        <cali-calendar
+          id="driven"
+          with-weekdays
+          with-offset
+          with-switcher
+        ></cali-calendar>
+      </section>
     </main>
+
+    <script type="module">
+      import "./calendar.js";
+
+      const bookingForm = document.getElementById("booking-form");
+      const bookingOut = document.getElementById("booking-out");
+      bookingForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const date = new FormData(bookingForm).get("booking") || "(empty)";
+        bookingOut.textContent = `booking=${date}`;
+      });
+      bookingForm.addEventListener("reset", () => {
+        bookingOut.textContent = "";
+      });
+
+      const guarded = document.getElementById("guarded");
+      const guardedOut = document.getElementById("guarded-out");
+      guarded.addEventListener("beforechange", (event) => {
+        const date = new Date(`${event.detail.date}T00:00`);
+        if (date.getDay() === 0) {
+          event.preventDefault();
+          guardedOut.textContent = `${event.detail.date} is Sunday — blocked.`;
+        }
+      });
+      guarded.addEventListener("change", (event) => {
+        guardedOut.textContent = event.detail.date;
+      });
+
+      const driven = document.getElementById("driven");
+      document.getElementById("to-today").addEventListener("click", () => {
+        const today = new Date();
+        driven.year = today.getFullYear();
+        driven.month = today.getMonth() + 1;
+      });
+      document.getElementById("to-december").addEventListener("click", () => {
+        driven.year = 2025;
+        driven.month = 12;
+      });
+    </script>
   </body>
 </html>

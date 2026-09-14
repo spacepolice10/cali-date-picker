@@ -241,6 +241,7 @@ export class CaliCalendar extends HTMLElement {
   }
 
   #renderView() {
+    this.dataset.view = this.#currentView;
     this.#renderSwitcher();
     this.#renderCalendarWrap();
   }
@@ -259,11 +260,13 @@ export class CaliCalendar extends HTMLElement {
     }
 
     const viewDate = this.#viewDate();
+    const monthsOpen = this.#currentView === "months";
+    const yearOpen = this.#currentView === "year";
     this.#switcher.innerHTML = `
-      <button type="button" data-action="switchPeriod" data-direction="-1" aria-label="Previous period">Previous</button>
-      <button type="button" data-action="switchView" data-view="months" aria-pressed="${this.#currentView === "months"}">${monthName(viewDate)}</button>
-      <button type="button" data-action="switchView" data-view="year" aria-pressed="${this.#currentView === "year"}">${this.#yearView}</button>
-      <button type="button" data-action="switchPeriod" data-direction="1" aria-label="Next period">Next</button>
+      <button type="button" part="previous" data-action="switchPeriod" data-direction="-1" aria-label="Previous period">Previous</button>
+      <button type="button" part="view-months${monthsOpen ? " selected-view" : ""}" data-action="switchView" data-view="months" aria-pressed="${monthsOpen}">${monthName(viewDate)}</button>
+      <button type="button" part="view-year${yearOpen ? " selected-view" : ""}" data-action="switchView" data-view="year" aria-pressed="${yearOpen}">${this.#yearView}</button>
+      <button type="button" part="next" data-action="switchPeriod" data-direction="1" aria-label="Next period">Next</button>
     `;
   }
 
@@ -335,8 +338,8 @@ export class CaliCalendar extends HTMLElement {
   #renderMonthsCalendar() {
     return this.#fragment(
       Array.from({ length: 12 }, (_, index) => {
-        const month = index + 1;
-        const isSelected = month === this.#monthsView;
+        const monthIndex = index + 1;
+        const isSelected = monthIndex === this.#monthsView;
         const parts = [
           "month",
           ...(isSelected ? ["selected-month"] : []),
@@ -347,7 +350,7 @@ export class CaliCalendar extends HTMLElement {
             part="${parts}"
             aria-pressed="${isSelected}"
             data-action="switchMonthsView"
-            data-month="${month}"
+            data-month="${monthIndex}"
           >${monthName(new Date(this.#yearView, index, 1))}</button>
         `;
       }).join("")
