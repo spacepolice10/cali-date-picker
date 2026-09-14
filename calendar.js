@@ -4,12 +4,12 @@ const YEAR_LIST_OFFSET = 5;
 
 function toDate(value) {
   if (!value) return;
-  const [year, month, day] = value.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
+  const [y, m, d] = value.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
   if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
+    date.getFullYear() !== y ||
+    date.getMonth() !== m - 1 ||
+    date.getDate() !== d
   )
     return;
   return date;
@@ -23,7 +23,7 @@ function toDateString(date) {
   ].join("-");
 }
 
-function monthName(date) {
+function monthLabel(date) {
   return new Intl.DateTimeFormat("en-US", { month: "long" }).format(date);
 }
 
@@ -85,17 +85,17 @@ export class CaliCalendar extends HTMLElement {
     this.value = "";
   }
 
-  get year() {
+  get yearView() {
     return this.#yearView;
   }
-  set year(value) {
+  set yearView(value) {
     this.#yearView = Number(value);
     if (this.isConnected) this.#renderView();
   }
-  get month() {
+  get monthsView() {
     return this.#monthsView;
   }
-  set month(value) {
+  set monthsView(value) {
     this.#monthsView = Number(value);
     if (this.isConnected) this.#renderView();
   }
@@ -229,9 +229,9 @@ export class CaliCalendar extends HTMLElement {
 
     const currentDate = new Date();
     this.#yearView =
-      Number(this.getAttribute("year")) || currentDate.getFullYear();
+      Number(this.getAttribute("year-view")) || currentDate.getFullYear();
     this.#monthsView =
-      Number(this.getAttribute("month")) || currentDate.getMonth() + 1;
+      Number(this.getAttribute("months-view")) || currentDate.getMonth() + 1;
   }
 
   #applyValue(raw) {
@@ -289,7 +289,7 @@ export class CaliCalendar extends HTMLElement {
     const yearOpen = this.#currentView === "year";
     this.#switcher.innerHTML = `
       <button type="button" part="previous" data-action="switchPeriod" data-direction="-1" aria-label="Previous period">Previous</button>
-      <button type="button" part="view-months${monthsOpen ? " selected-view" : ""}" data-action="switchView" data-view="months" aria-pressed="${monthsOpen}">${monthName(viewDate)}</button>
+      <button type="button" part="view-months${monthsOpen ? " selected-view" : ""}" data-action="switchView" data-view="months" aria-pressed="${monthsOpen}">${monthLabel(viewDate)}</button>
       <button type="button" part="view-year${yearOpen ? " selected-view" : ""}" data-action="switchView" data-view="year" aria-pressed="${yearOpen}">${this.#yearView}</button>
       <button type="button" part="next" data-action="switchPeriod" data-direction="1" aria-label="Next period">Next</button>
     `;
@@ -399,7 +399,7 @@ export class CaliCalendar extends HTMLElement {
             aria-pressed="${isSelected}"
             data-action="switchMonthsView"
             data-month="${monthIndex}"
-          >${monthName(new Date(this.#yearView, index, 1))}</button>
+          >${monthLabel(new Date(this.#yearView, index, 1))}</button>
         `;
       }).join("")
     );
