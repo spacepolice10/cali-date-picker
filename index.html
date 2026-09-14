@@ -99,6 +99,14 @@
         margin-block-end: var(--space-h);
       }
 
+      cali-calendar::part(confirmation) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-v);
+        margin-block-start: var(--space-h);
+      }
+
       cali-calendar::part(calendar) {
         display: grid;
         gap: var(--space-v);
@@ -131,6 +139,7 @@
       cali-calendar::part(next),
       cali-calendar::part(view-months),
       cali-calendar::part(view-year),
+      cali-calendar::part(confirm),
       cali-calendar::part(date-button),
       cali-calendar::part(months-button),
       cali-calendar::part(year-button) {
@@ -171,6 +180,7 @@
         <li><a href="#offset">Offset cells</a></li>
         <li><a href="#monday">Monday first</a></li>
         <li><a href="#switcher">Period switcher</a></li>
+        <li><a href="#confirmation">Confirm</a></li>
         <li><a href="#selected">Selected vs today</a></li>
         <li><a href="#open">Open on a month</a></li>
         <li><a href="#form">Form value</a></li>
@@ -194,6 +204,7 @@
           <li><code>::part(period-switcher)</code></li>
           <li><code>::part(previous)</code> / <code>::part(next)</code></li>
           <li><code>::part(view-months)</code> / <code>::part(view-year)</code> / <code>::part(selected-view)</code></li>
+          <li><code>::part(confirmation)</code> / <code>::part(preview)</code> / <code>::part(confirm)</code></li>
           <li><code>::part(calendar)</code></li>
           <li><code>::part(weekday)</code></li>
           <li><code>::part(offset)</code></li>
@@ -280,6 +291,28 @@ cali-calendar::part(selected-year-button) {
           with-offset
           with-switcher
         ></cali-calendar>
+      </section>
+
+      <section id="confirmation">
+        <h2>Confirm</h2>
+        <p>
+          <code>with-confirmation</code> previews the pick.
+          <code>value</code> and <code>change</code> wait for Confirm.
+        </p>
+        <pre><code class="language-html">&lt;cali-calendar
+  with-weekdays
+  with-offset
+  with-switcher
+  with-confirmation
+&gt;&lt;/cali-calendar&gt;</code></pre>
+        <cali-calendar
+          id="confirmed"
+          with-weekdays
+          with-offset
+          with-switcher
+          with-confirmation
+        ></cali-calendar>
+        <output id="confirmed-out">value is empty until Confirm.</output>
       </section>
 
       <section id="selected">
@@ -456,6 +489,12 @@ popover.addEventListener("toggle", (event) => {
       });
       guarded.addEventListener("change", (event) => {
         guardedOut.textContent = event.detail.date;
+      });
+
+      const confirmed = document.getElementById("confirmed");
+      const confirmedOut = document.getElementById("confirmed-out");
+      confirmed.addEventListener("change", (event) => {
+        confirmedOut.textContent = `value=${event.detail.date}`;
       });
 
       const driven = document.getElementById("driven");

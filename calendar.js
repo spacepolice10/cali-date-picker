@@ -35,6 +35,7 @@ export class CaliCalendar extends HTMLElement {
     "with-offset",
     "with-weekdays",
     "with-switcher",
+    "with-confirmation",
   ];
 
   #internals;
@@ -44,8 +45,11 @@ export class CaliCalendar extends HTMLElement {
   #yearListStart;
   #wrap;
   #switcher;
+  #confirmation;
+  #preview;
   #actions = {
     selectDate: (el) => this.#selectDate(el.dataset.date),
+    confirmDate: () => this.#confirmDate(),
     switchMonthsView: (el) => this.#switchMonthsView(Number(el.dataset.month)),
     switchYearView: (el) => this.#switchYearView(Number(el.dataset.year)),
     switchView: (el) => this.#switchView(el.dataset.view),
@@ -113,6 +117,9 @@ export class CaliCalendar extends HTMLElement {
   get #withSwitcher() {
     return this.hasAttribute("with-switcher");
   }
+  get #withConfirmation() {
+    return this.hasAttribute("with-confirmation");
+  }
 
   #catchClick(event) {
     const el = event.target.closest?.("[data-action]");
@@ -120,6 +127,21 @@ export class CaliCalendar extends HTMLElement {
   }
 
   #selectDate(date) {
+    if (this.#withConfirmation) {
+      this.#preview = date;
+      this.#renderView();
+      return;
+    }
+
+    this.#commitDate(date);
+  }
+
+  #confirmDate() {
+    if (!this.#preview || this.#preview === this.value) return;
+    this.#commitDate(this.#preview);
+  }
+
+  #commitDate(date) {
     const allowed = this.dispatchEvent(
       new CustomEvent("beforechange", {
         bubbles: true,
@@ -215,6 +237,7 @@ export class CaliCalendar extends HTMLElement {
   #applyValue(raw) {
     const date = toDate(raw);
     if (!date) {
+      this.#preview = undefined;
       if (raw) {
         this.setAttribute("value", "");
         return;
@@ -229,6 +252,7 @@ export class CaliCalendar extends HTMLElement {
       return;
     }
 
+    this.#preview = normalized;
     this.#yearView = date.getFullYear();
     this.#monthsView = date.getMonth() + 1;
     this.#internals.setFormValue(normalized);
@@ -244,6 +268,7 @@ export class CaliCalendar extends HTMLElement {
     this.dataset.view = this.#currentView;
     this.#renderSwitcher();
     this.#renderCalendarWrap();
+    this.#renderConfirmation();
   }
 
   #renderSwitcher() {
@@ -268,6 +293,29 @@ export class CaliCalendar extends HTMLElement {
       <button type="button" part="view-year${yearOpen ? " selected-view" : ""}" data-action="switchView" data-view="year" aria-pressed="${yearOpen}">${this.#yearView}</button>
       <button type="button" part="next" data-action="switchPeriod" data-direction="1" aria-label="Next period">Next</button>
     `;
+  }
+
+  #renderConfirmation() {
+    if (!this.#withConfirmation) {
+      this.#confirmation?.remove();
+      this.#confirmation = undefined;
+      return;
+    }
+
+    if (!this.#confirmation) {
+      this.#confirmation = document.createElement("div");
+      this.#confirmation.part = "confirmation";
+    }
+
+    const preview = this.#preview || this.value;
+    const confirmable = Boolean(this.#preview && this.#preview !== this.value);
+    this.#confirmation.innerHTML = `
+      <span part="preview">${preview}</span>
+      <button type="button" part="confirm" data-action="confirmDate" ${confirmable ? "" : "disabled"}>Confirm</button>
+    `;
+    if (this.#confirmation.parentNode !== this.shadowRoot) {
+      this.shadowRoot.append(this.#confirmation);
+    }
   }
 
   #renderCalendarWrap() {
@@ -314,7 +362,7 @@ export class CaliCalendar extends HTMLElement {
       const date = toDateString(
         new Date(viewDate.getFullYear(), viewDate.getMonth(), dayNumber)
       );
-      const isSelected = date === this.value;
+      const isSelected = date === (this.#preview || this.value);
       const isCurrent = date === currentDate;
       const parts = [
         "date-button",
