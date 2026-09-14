@@ -1,87 +1,94 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      name="description"
-      content="Live examples for Cali Date Picker web components."
-    />
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230ea5e9'/%3E%3Cpath d='M18 24h28v24H18z' fill='white'/%3E%3Cpath d='M18 24h28v8H18z' fill='%23ec4899'/%3E%3C/svg%3E"
-    />
-    <link rel="stylesheet" href="./demo.css" />
-    <title>Cali Date Picker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Minimal Cali Calendar</title>
+    <script type="module" src="./calendar.js?v=year-list-2"></script>
+    <style>
+      cali-calendar::part(calendar) {
+        display: grid;
+        grid-template-columns: repeat(7, 2.5rem);
+        gap: 0.25rem;
+      }
+
+      cali-calendar::part(weekday) {
+        text-align: center;
+        font-weight: bold;
+      }
+
+      cali-calendar::part(day) {
+        aspect-ratio: 1;
+        border: 1px solid transparent;
+        border-radius: 50%;
+      }
+
+      cali-calendar::part(current-day) {
+        border-color: #2563eb;
+        color: #1d4ed8;
+        font-weight: bold;
+      }
+
+      cali-calendar::part(selected-day) {
+        border-color: #1d4ed8;
+        background: #2563eb;
+        color: white;
+      }
+    </style>
   </head>
   <body>
+    <header>
+      <h1>Minimal Cali Calendar</h1>
+      <p>Each calendar renders one complete month.</p>
+    </header>
+
     <main>
-      <label
-        >Locale
-        <select id="locale">
-          <option value="en-US">English · US</option>
-          <option value="en-GB">English · UK</option>
-          <option value="vi-VN">Tiếng Việt</option>
-          <option value="ja-JP">日本語</option>
-        </select>
-      </label>
+      <section>
+        <h2>Current month</h2>
+        <form>
+          <cali-calendar name="current-month"></cali-calendar>
+          <button>Submit selected date</button>
+        </form>
+      </section>
 
-      <form id="demo-form">
-        <section id="date">
-          <h2>Date</h2>
-          <article>
-            <h3>Calendar</h3>
-            <cali-calendar name="date" months-number-to-draw="1"></cali-calendar>
-          </article>
-          <article>
-            <h3>Date form</h3>
-            <cali-dateform name="date-fields"></cali-dateform>
-          </article>
-        </section>
+      <section>
+        <h2>Current month with Sunday-first grid alignment</h2>
+        <p id="selected-date"></p>
+        <cali-calendar
+        id="calendar-1"
+          with-weekdays
+          with-offset
+          with-switcher
+        ></cali-calendar>
+        <script nonce="1234567890">
+          const calendar = document.getElementById("calendar-1");
+          calendar.addEventListener("change", (event) => {
+            console.log(event.detail.date);
+            document.getElementById("selected-date").textContent = event.detail.date;
+          });
+        </script>
+      </section>
 
-        <section id="time">
-          <h2>Time</h2>
-          <article>
-            <h3>Clocks</h3>
-            <cali-clocks name="time"></cali-clocks>
-          </article>
-          <article>
-            <h3>Time form</h3>
-            <cali-timeform name="time-fields"></cali-timeform>
-          </article>
-        </section>
+      <section>
+        <h2>Current month, Monday first</h2>
+        <cali-calendar
+          week-starts-on="mo"
+          with-weekdays
+          with-offset
+          with-switcher
+        ></cali-calendar>
+      </section>
 
-        <section id="ranges">
-          <h2>Ranges</h2>
-          <article>
-            <h3>Calendar range</h3>
-            <div class="overflow">
-              <cali-ranger-calendar
-                name="from"
-                end-name="to"
-                months-number-to-draw="2"
-              ></cali-ranger-calendar>
-            </div>
-          </article>
-          <article>
-            <h3>Time range</h3>
-            <cali-ranger-clocks
-              name="start-time"
-              end-name="end-time"
-            ></cali-ranger-clocks>
-          </article>
-        </section>
-
-        <section id="form-data">
-          <h2>Form data</h2>
-          <button type="submit">Inspect</button>
-          <pre
-            aria-live="polite"
-          ><code id="form-output">Select values, then inspect the form.</code></pre>
-        </section>
-      </form>
+      <section>
+        <h2>Preselected date</h2>
+        <cali-calendar
+          value="2026-09-13"
+          week-starts-on="mo"
+          with-weekdays
+          with-offset
+          with-switcher
+        ></cali-calendar>
+      </section>
     </main>
-    <script type="module" src="./demo.js"></script>
   </body>
 </html>
