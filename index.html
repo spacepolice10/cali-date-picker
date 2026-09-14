@@ -74,8 +74,20 @@
         min-height: 1.2em;
       }
 
+      #date-popover {
+        inset: unset;
+        margin: 0;
+        border: none;
+        background: var(--secondary-color);
+        color: inherit;
+        padding: 0;
+        width: min(24em, calc(100vw - 2 * var(--space-h)));
+      }
+
       cali-calendar {
         display: block;
+        border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+        padding: var(--space-h);
       }
 
       cali-calendar::part(period-switcher) {
@@ -89,6 +101,11 @@
         display: grid;
         gap: var(--space-v);
         grid-template-columns: repeat(7, minmax(0, 1fr));
+      }
+
+      cali-calendar[with-switcher]::part(calendar) {
+        height: 16em;
+        align-content: start;
       }
 
       cali-calendar[data-view="months"]::part(calendar) {
@@ -112,9 +129,9 @@
       cali-calendar::part(next),
       cali-calendar::part(view-months),
       cali-calendar::part(view-year),
-      cali-calendar::part(day),
-      cali-calendar::part(month),
-      cali-calendar::part(year) {
+      cali-calendar::part(date-button),
+      cali-calendar::part(months-button),
+      cali-calendar::part(year-button) {
         font: inherit;
         color: inherit;
         background: transparent;
@@ -122,14 +139,14 @@
         padding: var(--space-v);
       }
 
-      cali-calendar::part(current-day) {
+      cali-calendar::part(current-date-button) {
         border-color: var(--accent-color);
       }
 
       cali-calendar::part(selected-view),
-      cali-calendar::part(selected-day),
-      cali-calendar::part(selected-month),
-      cali-calendar::part(selected-year) {
+      cali-calendar::part(selected-date-button),
+      cali-calendar::part(selected-months-button),
+      cali-calendar::part(selected-year-button) {
         background: var(--accent-color);
         color: var(--secondary-color);
       }
@@ -157,6 +174,7 @@
         <li><a href="#form">Form value</a></li>
         <li><a href="#events">change / beforechange</a></li>
         <li><a href="#js">year / month from JS</a></li>
+        <li><a href="#popover">Popover</a></li>
       </ul>
     </nav>
 
@@ -177,22 +195,27 @@
           <li><code>::part(calendar)</code></li>
           <li><code>::part(weekday)</code></li>
           <li><code>::part(offset)</code></li>
-          <li><code>::part(day)</code> / <code>::part(current-day)</code> / <code>::part(selected-day)</code></li>
-          <li><code>::part(month)</code> / <code>::part(selected-month)</code></li>
-          <li><code>::part(year)</code> / <code>::part(selected-year)</code></li>
+          <li><code>::part(date-button)</code> / <code>::part(current-date-button)</code> / <code>::part(selected-date-button)</code></li>
+          <li><code>::part(months-button)</code> / <code>::part(selected-months-button)</code></li>
+          <li><code>::part(year-button)</code> / <code>::part(selected-year-button)</code></li>
         </ul>
-        <pre>cali-calendar[data-view="months"]::part(calendar) {
+        <pre>cali-calendar[with-switcher]::part(calendar) {
+  height: 16em;
+  align-content: start;
+}
+
+cali-calendar[data-view="months"]::part(calendar) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-cali-calendar::part(current-day) {
+cali-calendar::part(current-date-button) {
   border-color: var(--accent-color);
 }
 
 cali-calendar::part(selected-view),
-cali-calendar::part(selected-day),
-cali-calendar::part(selected-month),
-cali-calendar::part(selected-year) {
+cali-calendar::part(selected-date-button),
+cali-calendar::part(selected-months-button),
+cali-calendar::part(selected-year-button) {
   background: var(--accent-color);
   color: var(--secondary-color);
 }</pre>
@@ -242,7 +265,8 @@ cali-calendar::part(selected-year) {
         <p>
           Prev / next move the period. Month and year buttons toggle
           <code>data-view</code> and pick up <code>selected-view</code> while
-          that panel is open.
+          that panel is open. A fixed <code>calendar</code> height keeps the
+          page from jumping between views.
         </p>
         <pre>&lt;cali-calendar
   with-weekdays
@@ -259,8 +283,8 @@ cali-calendar::part(selected-year) {
       <section id="selected">
         <h2>Selected vs today</h2>
         <p>
-          <code>value</code> paints <code>selected-day</code>. Today keeps
-          <code>current-day</code> even when it is not selected.
+          <code>value</code> paints <code>selected-date-button</code>. Today keeps
+          <code>current-date-button</code> even when it is not selected.
         </p>
         <pre>&lt;cali-calendar
   value="2026-09-13"
@@ -363,6 +387,46 @@ calendar.month = 12;</pre>
           with-switcher
         ></cali-calendar>
       </section>
+
+      <section id="popover">
+        <h2>Popover</h2>
+        <p>
+          Native <code>popover</code>. <code>change</code> writes the date on
+          the trigger and closes the popover.
+        </p>
+        <button type="button" id="date-trigger" popovertarget="date-popover">
+          Pick a date
+        </button>
+        <div id="date-popover" popover>
+          <cali-calendar
+            with-weekdays
+            with-offset
+            with-switcher
+          ></cali-calendar>
+        </div>
+        <pre>&lt;button type="button" popovertarget="date-popover" id="date-trigger"&gt;
+  Pick a date
+&lt;/button&gt;
+&lt;div id="date-popover" popover&gt;
+  &lt;cali-calendar with-weekdays with-offset with-switcher&gt;&lt;/cali-calendar&gt;
+&lt;/div&gt;</pre>
+        <pre>calendar.addEventListener("change", (event) => {
+  trigger.textContent = event.detail.date;
+  popover.hidePopover();
+});
+
+popover.addEventListener("toggle", (event) => {
+  if (event.newState !== "open") return;
+  const rect = trigger.getBoundingClientRect();
+  const gap = 5;
+  const top =
+    rect.bottom + gap + popover.offsetHeight > window.innerHeight
+      ? rect.top - gap - popover.offsetHeight
+      : rect.bottom + gap;
+  popover.style.top = `${Math.max(0, top)}px`;
+  popover.style.left = `${rect.left}px`;
+});</pre>
+      </section>
     </main>
 
     <script type="module">
@@ -401,6 +465,25 @@ calendar.month = 12;</pre>
       document.getElementById("to-december").addEventListener("click", () => {
         driven.year = 2025;
         driven.month = 12;
+      });
+
+      const trigger = document.getElementById("date-trigger");
+      const popover = document.getElementById("date-popover");
+      const popoverCalendar = popover.querySelector("cali-calendar");
+      popoverCalendar.addEventListener("change", (event) => {
+        trigger.textContent = event.detail.date;
+        popover.hidePopover();
+      });
+      popover.addEventListener("toggle", (event) => {
+        if (event.newState !== "open") return;
+        const rect = trigger.getBoundingClientRect();
+        const gap = 5;
+        const top =
+          rect.bottom + gap + popover.offsetHeight > window.innerHeight
+            ? rect.top - gap - popover.offsetHeight
+            : rect.bottom + gap;
+        popover.style.top = `${Math.max(0, top)}px`;
+        popover.style.left = `${rect.left}px`;
       });
     </script>
   </body>

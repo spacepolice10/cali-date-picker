@@ -317,9 +317,9 @@ export class CaliCalendar extends HTMLElement {
       const isSelected = date === this.value;
       const isCurrent = date === currentDate;
       const parts = [
-        "day",
-        ...(isSelected ? ["selected-day"] : []),
-        ...(isCurrent ? ["current-day"] : []),
+        "date-button",
+        ...(isSelected ? ["selected-date-button"] : []),
+        ...(isCurrent ? ["current-date-button"] : []),
       ].join(" ");
       pieces.push(`
         <button
@@ -341,8 +341,8 @@ export class CaliCalendar extends HTMLElement {
         const monthIndex = index + 1;
         const isSelected = monthIndex === this.#monthsView;
         const parts = [
-          "month",
-          ...(isSelected ? ["selected-month"] : []),
+          "months-button",
+          ...(isSelected ? ["selected-months-button"] : []),
         ].join(" ");
         return `
           <button
@@ -363,9 +363,10 @@ export class CaliCalendar extends HTMLElement {
       Array.from({ length: YEAR_LIST_LENGTH }, (_, offset) => {
         const year = this.#yearListStart + offset;
         const isSelected = year === this.#yearView;
-        const parts = ["year", ...(isSelected ? ["selected-year"] : [])].join(
-          " "
-        );
+        const parts = [
+          "year-button",
+          ...(isSelected ? ["selected-year-button"] : []),
+        ].join(" ");
         return `
           <button
             type="button"
