@@ -187,6 +187,7 @@
         <li><a href="#events">change / beforechange</a></li>
         <li><a href="#js">year / month from JS</a></li>
         <li><a href="#popover">Popover</a></li>
+        <li><a href="#cdn">jsDelivr</a></li>
       </ul>
     </nav>
 
@@ -461,6 +462,19 @@ popover.addEventListener("toggle", (event) => {
   popover.style.top = `${Math.max(0, top)}px`;
   popover.style.left = `${rect.left}px`;
 });</code></pre>
+      </section>
+
+      <section id="cdn">
+        <h2>jsDelivr</h2>
+        <p>
+          <code>npm run minify</code> writes <code>calendar.min.js</code>.
+          jsDelivr serves that file from GitHub; pin a tag when you have one.
+        </p>
+        <pre><code class="language-html">&lt;script
+  type="module"
+  src="https://cdn.jsdelivr.net/gh/spacepolice10/cali-date-picker@main/calendar.min.js"
+&gt;&lt;/script&gt;
+&lt;cali-calendar&gt;&lt;/cali-calendar&gt;</code></pre>
       </section>
     </main>
 

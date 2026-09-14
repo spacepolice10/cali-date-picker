@@ -1,0 +1,33 @@
+{
+  "name": "cali-date-picker",
+  "private": false,
+  "author": "spacepolice10",
+  "version": "0.1.0",
+  "description": "A custom element date picker",
+  "keywords": [
+    "calendar",
+    "date-picker",
+    "custom-elements",
+    "web-components"
+  ],
+  "type": "module",
+  "main": "calendar.js",
+  "module": "calendar.js",
+  "browser": "calendar.min.js",
+  "jsdelivr": "calendar.min.js",
+  "unpkg": "calendar.min.js",
+  "exports": {
+    ".": "./calendar.js"
+  },
+  "files": [
+    "calendar.js",
+    "calendar.min.js",
+    "calendar.min.js.map"
+  ],
+  "scripts": {
+    "minify": "node minify.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
