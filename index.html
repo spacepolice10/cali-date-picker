@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cali Calendar</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/github.min.css"
+      media="(prefers-color-scheme: light)"
+    >
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/github-dark.min.css"
+      media="(prefers-color-scheme: dark)"
+    >
     <style>
       :root {
         --primary-color: #181818;
@@ -48,8 +58,7 @@
         font-size: 1.25rem;
       }
 
-      p,
-      pre {
+      p {
         margin-block: var(--space-h);
       }
 
@@ -60,13 +69,6 @@
 
       button {
         font: inherit;
-      }
-
-      pre {
-        overflow: auto;
-        padding: var(--space-h);
-        border: 1px solid;
-        white-space: pre-wrap;
       }
 
       output {
@@ -199,7 +201,7 @@
           <li><code>::part(months-button)</code> / <code>::part(selected-months-button)</code></li>
           <li><code>::part(year-button)</code> / <code>::part(selected-year-button)</code></li>
         </ul>
-        <pre>cali-calendar[with-switcher]::part(calendar) {
+        <pre><code class="hljs">cali-calendar[with-switcher]::part(calendar) {
   height: 16em;
   align-content: start;
 }
@@ -218,13 +220,13 @@ cali-calendar::part(selected-months-button),
 cali-calendar::part(selected-year-button) {
   background: var(--accent-color);
   color: var(--secondary-color);
-}</pre>
+}</code></pre>
       </section>
 
       <section id="bare">
         <h2>Bare month</h2>
         <p>No attributes. Current month, day buttons only.</p>
-        <pre>&lt;cali-calendar&gt;&lt;/cali-calendar&gt;</pre>
+        <pre><code class="language-html">&lt;cali-calendar&gt;&lt;/cali-calendar&gt;</code></pre>
         <cali-calendar></cali-calendar>
       </section>
 
@@ -234,25 +236,25 @@ cali-calendar::part(selected-year-button) {
           Labels in the first row. Without offset, the 1st still starts in
           column one.
         </p>
-        <pre>&lt;cali-calendar with-weekdays&gt;&lt;/cali-calendar&gt;</pre>
+        <pre><code class="language-html">&lt;cali-calendar with-weekdays&gt;&lt;/cali-calendar&gt;</code></pre>
         <cali-calendar with-weekdays></cali-calendar>
       </section>
 
       <section id="offset">
         <h2>Offset cells</h2>
         <p>Empty leading cells so the 1st lines up with its weekday.</p>
-        <pre>&lt;cali-calendar with-weekdays with-offset&gt;&lt;/cali-calendar&gt;</pre>
+        <pre><code class="language-html">&lt;cali-calendar with-weekdays with-offset&gt;&lt;/cali-calendar&gt;</code></pre>
         <cali-calendar with-weekdays with-offset></cali-calendar>
       </section>
 
       <section id="monday">
         <h2>Monday first</h2>
         <p>Week starts on Monday. Default is Sunday.</p>
-        <pre>&lt;cali-calendar
+        <pre><code class="language-html">&lt;cali-calendar
   week-starts-on="mo"
   with-weekdays
   with-offset
-&gt;&lt;/cali-calendar&gt;</pre>
+&gt;&lt;/cali-calendar&gt;</code></pre>
         <cali-calendar
           week-starts-on="mo"
           with-weekdays
@@ -268,11 +270,11 @@ cali-calendar::part(selected-year-button) {
           that panel is open. A fixed <code>calendar</code> height keeps the
           page from jumping between views.
         </p>
-        <pre>&lt;cali-calendar
+        <pre><code class="language-html">&lt;cali-calendar
   with-weekdays
   with-offset
   with-switcher
-&gt;&lt;/cali-calendar&gt;</pre>
+&gt;&lt;/cali-calendar&gt;</code></pre>
         <cali-calendar
           with-weekdays
           with-offset
@@ -286,13 +288,13 @@ cali-calendar::part(selected-year-button) {
           <code>value</code> paints <code>selected-date-button</code>. Today keeps
           <code>current-date-button</code> even when it is not selected.
         </p>
-        <pre>&lt;cali-calendar
+        <pre><code class="language-html">&lt;cali-calendar
   value="2026-09-13"
   week-starts-on="mo"
   with-weekdays
   with-offset
   with-switcher
-&gt;&lt;/cali-calendar&gt;</pre>
+&gt;&lt;/cali-calendar&gt;</code></pre>
         <cali-calendar
           value="2026-09-13"
           week-starts-on="mo"
@@ -308,13 +310,13 @@ cali-calendar::part(selected-year-button) {
           <code>year</code> and <code>month</code> set the initial view when
           there is no <code>value</code>.
         </p>
-        <pre>&lt;cali-calendar
+        <pre><code class="language-html">&lt;cali-calendar
   year="2025"
   month="12"
   with-weekdays
   with-offset
   with-switcher
-&gt;&lt;/cali-calendar&gt;</pre>
+&gt;&lt;/cali-calendar&gt;</code></pre>
         <cali-calendar
           year="2025"
           month="12"
@@ -330,11 +332,11 @@ cali-calendar::part(selected-year-button) {
           Form-associated: <code>name</code> submits ISO <code>YYYY-MM-DD</code>.
           Reset clears <code>value</code>.
         </p>
-        <pre>&lt;form&gt;
+        <pre><code class="language-html">&lt;form&gt;
   &lt;cali-calendar name="booking" with-weekdays with-offset&gt;&lt;/cali-calendar&gt;
   &lt;button&gt;Submit&lt;/button&gt;
   &lt;button type="reset"&gt;Reset&lt;/button&gt;
-&lt;/form&gt;</pre>
+&lt;/form&gt;</code></pre>
         <form id="booking-form">
           <cali-calendar
             name="booking"
@@ -355,10 +357,10 @@ cali-calendar::part(selected-year-button) {
           <code>change</code> reports the date.
           <code>beforechange</code> is cancelable — this one rejects Sundays.
         </p>
-        <pre>calendar.addEventListener("beforechange", (event) => {
+        <pre><code class="language-javascript">calendar.addEventListener("beforechange", (event) => {
   const date = new Date(`${event.detail.date}T00:00`);
   if (date.getDay() === 0) event.preventDefault();
-});</pre>
+});</code></pre>
         <cali-calendar
           id="guarded"
           week-starts-on="mo"
@@ -374,8 +376,8 @@ cali-calendar::part(selected-year-button) {
           After connect, drive the visible period with
           <code>.year</code> and <code>.month</code>.
         </p>
-        <pre>calendar.year = 2025;
-calendar.month = 12;</pre>
+        <pre><code class="language-javascript">calendar.year = 2025;
+calendar.month = 12;</code></pre>
         <p>
           <button type="button" id="to-today">This month</button>
           <button type="button" id="to-december">December 2025</button>
@@ -404,13 +406,13 @@ calendar.month = 12;</pre>
             with-switcher
           ></cali-calendar>
         </div>
-        <pre>&lt;button type="button" popovertarget="date-popover" id="date-trigger"&gt;
+        <pre><code class="language-html">&lt;button type="button" popovertarget="date-popover" id="date-trigger"&gt;
   Pick a date
 &lt;/button&gt;
 &lt;div id="date-popover" popover&gt;
   &lt;cali-calendar with-weekdays with-offset with-switcher&gt;&lt;/cali-calendar&gt;
-&lt;/div&gt;</pre>
-        <pre>calendar.addEventListener("change", (event) => {
+&lt;/div&gt;</code></pre>
+        <pre><code class="language-javascript">calendar.addEventListener("change", (event) => {
   trigger.textContent = event.detail.date;
   popover.hidePopover();
 });
@@ -425,7 +427,7 @@ popover.addEventListener("toggle", (event) => {
       : rect.bottom + gap;
   popover.style.top = `${Math.max(0, top)}px`;
   popover.style.left = `${rect.left}px`;
-});</pre>
+});</code></pre>
       </section>
     </main>
 
@@ -484,6 +486,18 @@ popover.addEventListener("toggle", (event) => {
             : rect.bottom + gap;
         popover.style.top = `${Math.max(0, top)}px`;
         popover.style.left = `${rect.left}px`;
+      });
+    </script>
+    <script type="module">
+      import hljs from "https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/es/core.min.js";
+      import xml from "https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/es/languages/xml.min.js";
+      import javascript from "https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/es/languages/javascript.min.js";
+
+      hljs.registerLanguage("xml", xml);
+      hljs.registerLanguage("html", xml);
+      hljs.registerLanguage("javascript", javascript);
+      document.querySelectorAll("pre code[class*='language-']").forEach((block) => {
+        hljs.highlightElement(block);
       });
     </script>
   </body>
