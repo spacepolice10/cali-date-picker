@@ -24,11 +24,21 @@
         --space-h: 10px;
 
         --w-max: 500px;
+        --w-page: 980px;
+        --w-aside: 220px;
 
         @media (prefers-color-scheme: dark) {
           --primary-color: #fff;
           --secondary-color: #181818;
           --accent-color: #B0E7F4;
+        }
+      }
+
+      html {
+        scroll-behavior: smooth;
+
+        @media (prefers-reduced-motion: reduce) {
+          scroll-behavior: auto;
         }
       }
 
@@ -39,6 +49,266 @@
         font-family: monospace;
         background-color: var(--secondary-color);
         color: var(--primary-color);
+      }
+
+      .page {
+        display: block;
+        min-width: 0;
+      }
+
+      .sidebar {
+        min-width: 0;
+      }
+
+      .sidebar nav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .sidebar nav a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--primary-color);
+        opacity: 0.55;
+        transition: opacity 0.2s ease;
+      }
+
+      .sidebar nav a::before {
+        content: "";
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: 0;
+        transform: scale(0.6);
+        transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+      }
+
+      .sidebar nav a.is-active {
+        opacity: 1;
+      }
+
+      .sidebar nav a.is-active::before {
+        opacity: 1;
+        transform: scale(1);
+        background: var(--accent-color);
+      }
+
+      .to-menu,
+      .pager-dots {
+        display: none;
+      }
+
+      @media (max-width: 899px) {
+        html,
+        body {
+          height: 100%;
+        }
+
+        body {
+          max-width: none;
+          margin: 0;
+          padding: 0;
+          height: 100vh;
+          height: 100dvh;
+          overflow: hidden;
+        }
+
+        /* Two full-screen pages: sidebar | examples. Snap horizontally. */
+        .page {
+          display: flex;
+          flex-direction: row;
+          height: 100vh;
+          height: 100dvh;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-snap-type: x mandatory;
+          scrollbar-width: none;
+        }
+
+        .page::-webkit-scrollbar {
+          display: none;
+        }
+
+        .sidebar,
+        .content {
+          flex: 0 0 100%;
+          width: 100%;
+          height: 100vh;
+          height: 100dvh;
+          overflow-y: auto;
+          overflow-x: hidden;
+          scroll-snap-align: start;
+          scroll-snap-stop: always;
+          box-sizing: border-box;
+          overscroll-behavior-y: contain;
+        }
+
+        /* Page 1: menu, kept on the left, vertically scrollable. */
+        .sidebar {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: calc(var(--space-h) * 3) calc(var(--space-h) * 2);
+        }
+
+        .sidebar nav ul {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          overflow: visible;
+        }
+
+        .sidebar nav li {
+          margin-block: 0;
+        }
+
+        .sidebar nav a {
+          text-decoration: none;
+          white-space: normal;
+          font-size: 1.1rem;
+          padding-block: 6px;
+        }
+
+        /* Page 2: examples. Extra left padding clears the dot rail. */
+        .content {
+          padding: var(--space-h) calc(var(--space-h) * 2) calc(var(--space-h) * 4)
+            calc(var(--space-h) * 2 + 22px);
+        }
+
+        .to-menu {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-block-end: var(--space-h);
+          background: none;
+          border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+          border-radius: 999px;
+          padding: 4px 12px 4px 8px;
+          color: inherit;
+          font: inherit;
+          cursor: pointer;
+        }
+
+        .to-menu .icon {
+          flex: none;
+          width: 14px;
+          height: 14px;
+          background: currentColor;
+          -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 6l-6 6 6 6'/%3E%3C/svg%3E");
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 6l-6 6 6 6'/%3E%3C/svg%3E");
+          -webkit-mask-size: contain;
+          mask-size: contain;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+          -webkit-mask-position: center;
+          mask-position: center;
+        }
+
+        main > section {
+          scroll-margin-top: var(--space-h);
+        }
+
+        /* Slim square rail pinned to the left edge: one tap anywhere
+           opens the menu. Dots mirror the visible section. Mobile only. */
+        .pager-dots {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          position: fixed;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 30;
+          padding: 12px 7px;
+          color: inherit;
+          background: color-mix(in srgb, var(--secondary-color) 88%, transparent);
+          border: 1px solid color-mix(in srgb, var(--primary-color) 20%, transparent);
+          border-left: none;
+          border-radius: 0;
+          cursor: pointer;
+          transition: opacity 0.25s ease, translate 0.25s ease, visibility 0s;
+        }
+
+        .pager-dots.is-hidden {
+          opacity: 0;
+          translate: -100% 0;
+          pointer-events: none;
+          visibility: hidden;
+          transition: opacity 0.25s ease, translate 0.25s ease, visibility 0s 0.25s;
+        }
+
+        .pager-dots-list {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          pointer-events: none;
+        }
+
+        .pager-dots-list > span {
+          width: 14px;
+          height: 14px;
+          display: grid;
+          place-items: center;
+        }
+
+        .pager-dots-list > span::before {
+          content: "";
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: currentColor;
+          opacity: 0.35;
+          transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .pager-dots-list > span.is-active::before {
+          opacity: 1;
+          transform: scale(1.35);
+          background: var(--accent-color);
+        }
+      }
+
+      @media (min-width: 900px) {
+        body {
+          max-width: var(--w-page);
+        }
+
+        .page {
+          display: grid;
+          grid-template-columns: var(--w-aside) minmax(0, var(--w-max));
+          gap: calc(var(--space-h) * 4);
+          justify-content: center;
+          align-items: start;
+        }
+
+        .sidebar {
+          position: sticky;
+          top: 0;
+          max-height: 100vh;
+          max-height: 100dvh;
+          overflow-y: auto;
+          padding-block: calc(var(--space-h) * 2);
+          scrollbar-width: thin;
+        }
+
+        .sidebar nav ul {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .sidebar nav a {
+          text-decoration: none;
+          padding-block: 2px;
+        }
+
+        main > section {
+          scroll-margin-top: var(--space-h);
+        }
       }
 
       a {
@@ -154,6 +424,21 @@
         background: color-mix(in srgb, var(--primary-color) 50%, transparent);
       }
 
+      /* Binding demo: no native picker icon where the browser allows it —
+         the calendar below is the picker. Firefox exposes no selector
+         for its icon, so it stays visible there. */
+      #bound-input::-webkit-calendar-picker-indicator {
+        display: none;
+      }
+
+      @media (max-width: 899px) {
+        /* Binding demo is desktop-only. */
+        #binding,
+        .sidebar nav li:has(a[href="#binding"]) {
+          display: none;
+        }
+      }
+
       cali-calendar {
         display: block;
         width: fit-content;
@@ -246,6 +531,10 @@
         border-color: var(--accent-color);
       }
 
+      cali-calendar::part(disabled-date-button) {
+        opacity: 0.35;
+      }
+
       cali-calendar::part(selected-view),
       cali-calendar::part(selected-date-button),
       cali-calendar::part(selected-months-button),
@@ -256,36 +545,43 @@
     </style>
   </head>
   <body>
-    <header>
-      <h1>Cali Calendar</h1>
-      <p>
-        One month at a time. Attributes configure the grid; CSS parts and
-        <code>data-view</code> style the rest.
-      </p>
-    </header>
+    <div class="page">
+      <aside class="sidebar">
+        <nav aria-label="Demo sections">
+          <ul>
+            <li><a href="#hooks">Style hooks</a></li>
+            <li><a href="#attributes">Attributes</a></li>
+            <li><a href="#bare">Bare month</a></li>
+            <li><a href="#weekdays">Weekdays</a></li>
+            <li><a href="#offset">Offset cells</a></li>
+            <li><a href="#monday">Monday first</a></li>
+            <li><a href="#switcher">Period switcher</a></li>
+            <li><a href="#confirmation">Confirm</a></li>
+            <li><a href="#selected">Selected vs today</a></li>
+            <li><a href="#range">Range</a></li>
+            <li><a href="#open">Open on a month</a></li>
+            <li><a href="#form">Form value</a></li>
+            <li><a href="#events">change / beforechange</a></li>
+            <li><a href="#binding">Bind an input</a></li>
+            <li><a href="#js">yearView / monthsView from JS</a></li>
+            <li><a href="#popover">Popover</a></li>
+            <li><a href="#dialog">Dialog</a></li>
+            <li><a href="#cdn">jsDelivr</a></li>
+          </ul>
+        </nav>
+      </aside>
 
-    <nav>
-      <ul>
-        <li><a href="#hooks">Style hooks</a></li>
-        <li><a href="#attributes">Attributes</a></li>
-        <li><a href="#bare">Bare month</a></li>
-        <li><a href="#weekdays">Weekdays</a></li>
-        <li><a href="#offset">Offset cells</a></li>
-        <li><a href="#monday">Monday first</a></li>
-        <li><a href="#switcher">Period switcher</a></li>
-        <li><a href="#confirmation">Confirm</a></li>
-        <li><a href="#selected">Selected vs today</a></li>
-        <li><a href="#open">Open on a month</a></li>
-        <li><a href="#form">Form value</a></li>
-        <li><a href="#events">change / beforechange</a></li>
-        <li><a href="#js">yearView / monthsView from JS</a></li>
-        <li><a href="#popover">Popover</a></li>
-        <li><a href="#dialog">Dialog</a></li>
-        <li><a href="#cdn">jsDelivr</a></li>
-      </ul>
-    </nav>
+      <div class="content">
+        <header>
+          <button type="button" class="to-menu" id="to-menu"><i class="icon icon-chevron-left" aria-hidden="true"></i>Menu</button>
+          <h1>Cali Calendar</h1>
+          <p>
+            One month at a time. Attributes configure the grid; CSS parts and
+            <code>data-view</code> style the rest.
+          </p>
+        </header>
 
-    <main>
+        <main>
       <section id="hooks">
         <h2>Style hooks</h2>
         <p>Host state:</p>
@@ -303,7 +599,7 @@
           <li><code>::part(calendar)</code></li>
           <li><code>::part(weekday)</code></li>
           <li><code>::part(offset)</code></li>
-          <li><code>::part(date-button)</code> / <code>::part(current-date-button)</code> / <code>::part(selected-date-button)</code></li>
+          <li><code>::part(date-button)</code> / <code>::part(current-date-button)</code> / <code>::part(selected-date-button)</code> / <code>::part(disabled-date-button)</code></li>
           <li><code>::part(months-button)</code> / <code>::part(selected-months-button)</code></li>
           <li><code>::part(year-button)</code> / <code>::part(selected-year-button)</code></li>
         </ul>
@@ -344,6 +640,14 @@ cali-calendar::part(selected-year-button) {
             <tr>
               <td><code>value="YYYY-MM-DD"</code></td>
               <td>Selected date. Paints <code>selected-date-button</code>, sets the form value, opens the calendar on that month. Empty clears the selection.</td>
+            </tr>
+            <tr>
+              <td><code>minval="YYYY-MM-DD"</code></td>
+              <td>Earliest selectable date. Earlier day buttons render <code>disabled</code> with <code>disabled-date-button</code> and ignore clicks. Views stay navigable. Set once; not observed.</td>
+            </tr>
+            <tr>
+              <td><code>maxval="YYYY-MM-DD"</code></td>
+              <td>Latest selectable date. Later day buttons render <code>disabled</code> with <code>disabled-date-button</code> and ignore clicks. Views stay navigable. Set once; not observed.</td>
             </tr>
             <tr>
               <td><code>with-weekdays</code></td>
@@ -499,6 +803,33 @@ cali-calendar::part(selected-year-button) {
         ></cali-calendar>
       </section>
 
+      <section id="range">
+        <h2>Range</h2>
+        <p>
+          <code>minval</code> and <code>maxval</code> disable day buttons
+          outside the range. Only the buttons are gated — months, year, and
+          prev / next stay navigable.
+        </p>
+        <h3 class="block-title">Code</h3>
+        <pre><code class="language-html">&lt;cali-calendar
+  value="2026-09-13"
+  minval="2026-09-10"
+  maxval="2026-09-20"
+  with-weekdays
+  with-offset
+  with-switcher
+&gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
+        <cali-calendar
+          value="2026-09-13"
+          minval="2026-09-10"
+          maxval="2026-09-20"
+          with-weekdays
+          with-offset
+          with-switcher
+        ></cali-calendar>
+      </section>
+
       <section id="open">
         <h2>Open on a month</h2>
         <p>
@@ -571,6 +902,59 @@ cali-calendar::part(selected-year-button) {
         ></cali-calendar>
         <h3 class="block-title">Preview</h3>
         <output id="guarded-out" class="preview">Pick a date. Sundays stay unselected.</output>
+      </section>
+
+      <section id="binding">
+        <h2>Bind an input</h2>
+        <p>
+          Keep parsing in a native input; the calendar stays strict ISO
+          <code>YYYY-MM-DD</code>. Sync both ways with <code>change</code>.
+          Clearing the input clears the calendar.
+        </p>
+        <h3 class="block-title">Code — HTML</h3>
+        <pre><code class="language-html">&lt;input
+  id="bound-input"
+  type="date"
+  min="2026-09-10"
+  max="2026-09-20"
+  value="2026-09-13"
+&gt;
+&lt;cali-calendar
+  id="bound"
+  value="2026-09-13"
+  minval="2026-09-10"
+  maxval="2026-09-20"
+  with-weekdays
+  with-offset
+&gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Code — JavaScript</h3>
+        <pre><code class="language-javascript">calendar.addEventListener("change", (event) => {
+  input.value = event.detail.date;
+});
+
+input.addEventListener("change", () => {
+  calendar.value = input.value;
+});</code></pre>
+        <h3 class="block-title">Example</h3>
+        <p>
+          <input
+            id="bound-input"
+            type="date"
+            min="2026-09-10"
+            max="2026-09-20"
+            value="2026-09-13"
+          >
+        </p>
+        <cali-calendar
+          id="bound"
+          value="2026-09-13"
+          minval="2026-09-10"
+          maxval="2026-09-20"
+          with-weekdays
+          with-offset
+        ></cali-calendar>
+        <h3 class="block-title">Preview</h3>
+        <output id="bound-out" class="preview">2026-09-13</output>
       </section>
 
       <section id="js">
@@ -696,7 +1080,13 @@ calendar.addEventListener("change", (event) => {
 &gt;&lt;/script&gt;
 &lt;cali-calendar&gt;&lt;/cali-calendar&gt;</code></pre>
       </section>
-    </main>
+      </main>
+      </div>
+    </div>
+
+    <button type="button" class="pager-dots is-hidden" id="pager-dots" aria-label="Back to menu">
+      <span class="pager-dots-list" id="dots-list" aria-hidden="true"></span>
+    </button>
 
     <script type="module">
       import "./calendar.js";
@@ -723,6 +1113,18 @@ calendar.addEventListener("change", (event) => {
       });
       guarded.addEventListener("change", (event) => {
         guardedOut.textContent = event.detail.date;
+      });
+
+      const boundInput = document.getElementById("bound-input");
+      const bound = document.getElementById("bound");
+      const boundOut = document.getElementById("bound-out");
+      bound.addEventListener("change", (event) => {
+        boundInput.value = event.detail.date;
+        boundOut.textContent = event.detail.date;
+      });
+      boundInput.addEventListener("change", () => {
+        bound.value = boundInput.value;
+        boundOut.textContent = boundInput.value || "(empty)";
       });
 
       const confirmed = document.getElementById("confirmed");
@@ -788,6 +1190,130 @@ calendar.addEventListener("change", (event) => {
       document.querySelectorAll("pre code[class*='language-']").forEach((block) => {
         hljs.highlightElement(block);
       });
+    </script>
+    <script type="module">
+      const page = document.querySelector(".page");
+      const sidebar = document.querySelector(".sidebar");
+      const content = document.querySelector(".content");
+      const nav = document.querySelector(".sidebar nav");
+      // Skip links hidden by CSS (e.g. desktop-only demos on mobile).
+      const links = [...nav.querySelectorAll("a")].filter(
+        (a) => a.offsetParent !== null,
+      );
+      const sections = links
+        .map((link) => document.querySelector(link.hash))
+        .filter(Boolean);
+      const mq = window.matchMedia("(max-width: 899px)");
+      const isMobile = () => mq.matches;
+
+      // Keep the active link visible inside the sidebar only —
+      // never touch the horizontal pager scroll here.
+      const keepLinkVisible = (link) => {
+        const bar = sidebar.getBoundingClientRect();
+        const rect = link.getBoundingClientRect();
+        if (rect.top < bar.top || rect.bottom > bar.bottom) {
+          sidebar.scrollTo({
+            top:
+              sidebar.scrollTop +
+              (rect.top - bar.top) -
+              sidebar.clientHeight / 2 +
+              rect.height / 2,
+            behavior: "smooth",
+          });
+        }
+      };
+
+      const dotsNav = document.getElementById("pager-dots");
+      const dotsList = document.getElementById("dots-list");
+      const dots = links.map((link) => {
+        const dot = document.createElement("span");
+        dot.dataset.hash = link.hash;
+        dotsList?.appendChild(dot);
+        return dot;
+      });
+
+      const setActive = (id, scrollNav = true) => {
+        for (const link of links) {
+          const isActive = link.hash === `#${id}`;
+          link.classList.toggle("is-active", isActive);
+          if (isActive) {
+            link.setAttribute("aria-current", "true");
+            if (scrollNav) keepLinkVisible(link);
+          } else {
+            link.removeAttribute("aria-current");
+          }
+        }
+        for (const dot of dots) {
+          dot.classList.toggle("is-active", dot.dataset.hash === `#${id}`);
+        }
+      };
+
+      let observer = null;
+      if ("IntersectionObserver" in window && sections.length > 0) {
+        let current = sections[0].id;
+        const createObserver = () => {
+          observer?.disconnect();
+          observer = new IntersectionObserver(
+            (entries) => {
+              for (const entry of entries) {
+                if (entry.isIntersecting) current = entry.target.id;
+              }
+              setActive(current);
+            },
+            isMobile()
+              ? { root: content, rootMargin: "-20% 0px -65% 0px" }
+              : { rootMargin: "-20% 0px -65% 0px" },
+          );
+          sections.forEach((section) => observer.observe(section));
+        };
+        createObserver();
+        mq.addEventListener?.("change", createObserver);
+        setActive(current, false);
+      }
+
+      const goToExamples = () =>
+        page.scrollTo({ left: page.clientWidth, behavior: "smooth" });
+      const goToMenu = () => page.scrollTo({ left: 0, behavior: "smooth" });
+
+      document.getElementById("to-menu")?.addEventListener("click", goToMenu);
+      // The whole rail is one tap target back to the menu.
+      dotsNav?.addEventListener("click", goToMenu);
+
+      // On mobile the examples live in their own scroll container,
+      // so swipe the pager over first, then scroll the section inside it.
+      const openSection = (hash) => {
+        const section = document.querySelector(hash);
+        if (!section) return;
+        goToExamples();
+        history.replaceState(null, "", hash);
+        requestAnimationFrame(() => {
+          const top =
+            section.getBoundingClientRect().top -
+            content.getBoundingClientRect().top +
+            content.scrollTop;
+          content.scrollTo({ top, behavior: "smooth" });
+        });
+      };
+
+      nav.addEventListener("click", (event) => {
+        const link = event.target.closest("a");
+        if (!link || !isMobile()) return;
+        event.preventDefault();
+        openSection(link.hash);
+      });
+
+      // The rail is only useful on the examples page — hide it while
+      // the menu page is visible.
+      const syncDotsVisibility = () => {
+        dotsNav?.classList.toggle(
+          "is-hidden",
+          !isMobile() || page.scrollLeft < page.clientWidth / 2,
+        );
+      };
+      page.addEventListener("scroll", syncDotsVisibility, { passive: true });
+      window.addEventListener("resize", syncDotsVisibility);
+      mq.addEventListener?.("change", syncDotsVisibility);
+      syncDotsVisibility();
     </script>
   </body>
 </html>

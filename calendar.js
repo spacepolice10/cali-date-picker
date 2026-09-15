@@ -27,6 +27,28 @@ function monthLabel(date) {
   return new Intl.DateTimeFormat("en-US", { month: "long" }).format(date);
 }
 
+/**
+ * @typedef {string} IsoDate ISO date `YYYY-MM-DD`. Empty string clears the property.
+ */
+
+/**
+ * `<cali-calendar>` — one month at a time.
+ *
+ * @element cali-calendar
+ * @attr {IsoDate} [value=""] Selected date. Paints the selected button, sets the form value.
+ * @attr {IsoDate} [minval=""] Earliest selectable date. Earlier day buttons render disabled.
+ * @attr {IsoDate} [maxval=""] Latest selectable date. Later day buttons render disabled.
+ * @attr {string} [week-starts-on="su"] `"mo"` starts the week on Monday, anything else is Sunday.
+ * @attr {boolean} [with-offset] Adds empty leading cells so the 1st lines up with its weekday.
+ * @attr {boolean} [with-weekdays] Shows weekday labels in the first row.
+ * @attr {boolean} [with-switcher] Shows prev/next plus month and year view switching.
+ * @attr {boolean} [with-confirmation] Stages the pick; `value`/`change` wait for Confirm.
+ * @attr {number} [year-view] Initial visible year when there is no `value`. After connect use `.yearView`.
+ * @attr {number} [months-view] Initial visible month (1-12) when there is no `value`. After connect use `.monthsView`.
+ * @attr {string} [name] Form-associated name. Submits the ISO date; form reset clears `value`.
+ * @fires CustomEvent<{date: IsoDate}> beforechange Cancelable, dispatched before `value` changes.
+ * @fires CustomEvent<{date: IsoDate}> change Dispatched after `value` changes.
+ */
 export class CaliCalendar extends HTMLElement {
   static formAssociated = true;
   static observedAttributes = [
@@ -88,6 +110,10 @@ export class CaliCalendar extends HTMLElement {
   get yearView() {
     return this.#yearView;
   }
+  /**
+   * Visible year. Driven after connect; initial value comes from `year-view` or `value`.
+   * @type {number}
+   */
   set yearView(value) {
     this.#yearView = Number(value);
     if (this.isConnected) this.#renderView();
@@ -95,6 +121,10 @@ export class CaliCalendar extends HTMLElement {
   get monthsView() {
     return this.#monthsView;
   }
+  /**
+   * Visible month (1-12). Driven after connect; initial value comes from `months-view` or `value`.
+   * @type {number}
+   */
   set monthsView(value) {
     this.#monthsView = Number(value);
     if (this.isConnected) this.#renderView();
@@ -102,8 +132,46 @@ export class CaliCalendar extends HTMLElement {
   get value() {
     return this.getAttribute("value") ?? "";
   }
+  /**
+   * Selected date. Empty string clears the selection.
+   * @type {IsoDate}
+   */
   set value(value) {
     this.setAttribute("value", value);
+  }
+  get minval() {
+    const date = toDate(this.getAttribute("minval"));
+    return date ? toDateString(date) : "";
+  }
+  /**
+   * Earliest selectable date. Day buttons before it are disabled; views stay navigable.
+   * Predetermined — read on render, not observed.
+   * @type {IsoDate}
+   */
+  set minval(value) {
+    if (value) this.setAttribute("minval", value);
+    else this.removeAttribute("minval");
+    if (this.#preview && this.#isDisabled(this.#preview)) {
+      this.#preview = undefined;
+    }
+    if (this.isConnected) this.#renderView();
+  }
+  get maxval() {
+    const date = toDate(this.getAttribute("maxval"));
+    return date ? toDateString(date) : "";
+  }
+  /**
+   * Latest selectable date. Day buttons after it are disabled; views stay navigable.
+   * Predetermined — read on render, not observed.
+   * @type {IsoDate}
+   */
+  set maxval(value) {
+    if (value) this.setAttribute("maxval", value);
+    else this.removeAttribute("maxval");
+    if (this.#preview && this.#isDisabled(this.#preview)) {
+      this.#preview = undefined;
+    }
+    if (this.isConnected) this.#renderView();
   }
   get #weekStartsOn() {
     return this.getAttribute("week-starts-on") === "mo" ? "mo" : "su";
@@ -121,12 +189,22 @@ export class CaliCalendar extends HTMLElement {
     return this.hasAttribute("with-confirmation");
   }
 
+  #isDisabled(iso) {
+    if (!iso) return false;
+    const min = this.minval;
+    const max = this.maxval;
+    if (min && iso < min) return true;
+    if (max && iso > max) return true;
+    return false;
+  }
+
   #catchClick(event) {
     const el = event.target.closest?.("[data-action]");
     this.#actions[el?.dataset.action]?.(el);
   }
 
   #selectDate(date) {
+    if (this.#isDisabled(date)) return;
     if (this.#withConfirmation) {
       this.#preview = date;
       this.#renderView();
@@ -138,10 +216,12 @@ export class CaliCalendar extends HTMLElement {
 
   #confirmDate() {
     if (!this.#preview || this.#preview === this.value) return;
+    if (this.#isDisabled(this.#preview)) return;
     this.#commitDate(this.#preview);
   }
 
   #commitDate(date) {
+    if (this.#isDisabled(date)) return;
     const allowed = this.dispatchEvent(
       new CustomEvent("beforechange", {
         bubbles: true,
@@ -308,7 +388,11 @@ export class CaliCalendar extends HTMLElement {
     }
 
     const preview = this.#preview || this.value;
-    const confirmable = Boolean(this.#preview && this.#preview !== this.value);
+    const confirmable = Boolean(
+      this.#preview &&
+        this.#preview !== this.value &&
+        !this.#isDisabled(this.#preview)
+    );
     this.#confirmation.innerHTML = `
       <span part="preview">${preview}</span>
       <button type="button" part="confirm" data-action="confirmDate" ${confirmable ? "" : "disabled"}>Confirm</button>
@@ -364,18 +448,22 @@ export class CaliCalendar extends HTMLElement {
       );
       const isSelected = date === (this.#preview || this.value);
       const isCurrent = date === currentDate;
+      const isDisabled = this.#isDisabled(date);
       const parts = [
         "date-button",
         ...(isSelected ? ["selected-date-button"] : []),
         ...(isCurrent ? ["current-date-button"] : []),
+        ...(isDisabled ? ["disabled-date-button"] : []),
       ].join(" ");
       pieces.push(`
         <button
           type="button"
           part="${parts}"
           aria-pressed="${isSelected}"
+          aria-disabled="${isDisabled}"
           data-action="selectDate"
           data-date="${date}"
+          ${isDisabled ? "disabled" : ""}
         >${dayNumber}</button>
       `);
     }
