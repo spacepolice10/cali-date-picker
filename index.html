@@ -50,12 +50,21 @@
       }
 
       h1,
-      h2 {
+      h2,
+      h3 {
         font-size: 1rem;
       }
 
       h1 {
         font-size: 1.25rem;
+      }
+
+      .block-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.6;
+        margin-block: calc(var(--space-h) * 1.5) var(--space-v);
       }
 
       p {
@@ -76,6 +85,54 @@
         min-height: 1.2em;
       }
 
+      output.preview {
+        border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+        background: color-mix(in srgb, var(--primary-color) 6%, var(--secondary-color));
+        padding: var(--space-v) var(--space-h);
+        margin-block-start: var(--space-h);
+      }
+
+      pre {
+        margin-block: 0;
+        padding: var(--space-h);
+        border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+        background: color-mix(in srgb, var(--primary-color) 6%, var(--secondary-color));
+        overflow-x: auto;
+      }
+
+      pre code.hljs {
+        background: transparent;
+        padding: 0;
+      }
+
+      table.attrs {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+        background: color-mix(in srgb, var(--primary-color) 6%, var(--secondary-color));
+        font-size: 0.85rem;
+      }
+
+      table.attrs th,
+      table.attrs td {
+        text-align: left;
+        vertical-align: top;
+        padding: var(--space-v) var(--space-h);
+        border-top: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+      }
+
+      table.attrs thead th {
+        border-top: none;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.6;
+      }
+
+      table.attrs td:first-child {
+        white-space: nowrap;
+      }
+
       #date-popover {
         inset: unset;
         margin: 0;
@@ -86,8 +143,21 @@
         width: min(24em, calc(100vw - 2 * var(--space-h)));
       }
 
+      #date-dialog {
+        border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+        background: var(--secondary-color);
+        color: inherit;
+        padding: var(--space-h);
+      }
+
+      #date-dialog::backdrop {
+        background: color-mix(in srgb, var(--primary-color) 50%, transparent);
+      }
+
       cali-calendar {
         display: block;
+        width: fit-content;
+        max-width: 100%;
         border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
         padding: var(--space-h);
       }
@@ -107,10 +177,18 @@
         margin-block-start: var(--space-h);
       }
 
+      cali-calendar::part(preview) {
+        flex: 1;
+        border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+        background: color-mix(in srgb, var(--primary-color) 6%, transparent);
+        padding: var(--space-v) var(--space-h);
+      }
+
       cali-calendar::part(calendar) {
         display: grid;
         gap: var(--space-v);
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        grid-template-columns: repeat(7, 2em);
+        justify-content: start;
       }
 
       cali-calendar[with-switcher]::part(calendar) {
@@ -127,12 +205,17 @@
       }
 
       cali-calendar::part(weekday) {
-        text-align: center;
+        width: 2em;
+        height: 2em;
+        display: grid;
+        place-items: center;
+        white-space: nowrap;
         opacity: 0.6;
       }
 
       cali-calendar::part(offset) {
-        min-height: 1.5em;
+        width: 2em;
+        height: 2em;
       }
 
       cali-calendar::part(previous),
@@ -148,6 +231,15 @@
         background: transparent;
         border: 1px solid transparent;
         padding: var(--space-v);
+      }
+
+      cali-calendar::part(date-button) {
+        width: 2em;
+        height: 2em;
+        aspect-ratio: 1;
+        padding: 0;
+        display: grid;
+        place-items: center;
       }
 
       cali-calendar::part(current-date-button) {
@@ -175,6 +267,7 @@
     <nav>
       <ul>
         <li><a href="#hooks">Style hooks</a></li>
+        <li><a href="#attributes">Attributes</a></li>
         <li><a href="#bare">Bare month</a></li>
         <li><a href="#weekdays">Weekdays</a></li>
         <li><a href="#offset">Offset cells</a></li>
@@ -187,6 +280,7 @@
         <li><a href="#events">change / beforechange</a></li>
         <li><a href="#js">yearView / monthsView from JS</a></li>
         <li><a href="#popover">Popover</a></li>
+        <li><a href="#dialog">Dialog</a></li>
         <li><a href="#cdn">jsDelivr</a></li>
       </ul>
     </nav>
@@ -213,6 +307,7 @@
           <li><code>::part(months-button)</code> / <code>::part(selected-months-button)</code></li>
           <li><code>::part(year-button)</code> / <code>::part(selected-year-button)</code></li>
         </ul>
+        <h3 class="block-title">Code</h3>
         <pre><code class="hljs">cali-calendar[with-switcher]::part(calendar) {
   height: 16em;
   align-content: start;
@@ -235,10 +330,63 @@ cali-calendar::part(selected-year-button) {
 }</code></pre>
       </section>
 
+      <section id="attributes">
+        <h2>Attributes</h2>
+        <p>Boolean attributes are on / off by presence. Values are strings.</p>
+        <table class="attrs">
+          <thead>
+            <tr>
+              <th>Attribute</th>
+              <th>What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>value="YYYY-MM-DD"</code></td>
+              <td>Selected date. Paints <code>selected-date-button</code>, sets the form value, opens the calendar on that month. Empty clears the selection.</td>
+            </tr>
+            <tr>
+              <td><code>with-weekdays</code></td>
+              <td>Shows weekday labels (<code>Sun</code>–<code>Sat</code>) in the first row.</td>
+            </tr>
+            <tr>
+              <td><code>with-offset</code></td>
+              <td>Adds empty leading cells so the 1st lines up with its weekday. Needs <code>with-weekdays</code> to make sense.</td>
+            </tr>
+            <tr>
+              <td><code>week-starts-on="mo"</code></td>
+              <td>Starts the week on Monday. Default is Sunday; any value other than <code>mo</code> is Sunday.</td>
+            </tr>
+            <tr>
+              <td><code>with-switcher</code></td>
+              <td>Shows prev / next plus month and year buttons to switch <code>data-view</code> between days, months, and year panels.</td>
+            </tr>
+            <tr>
+              <td><code>with-confirmation</code></td>
+              <td>Stages the pick in <code>::part(preview)</code>. <code>value</code> and <code>change</code> only update after Confirm.</td>
+            </tr>
+            <tr>
+              <td><code>year-view="2025"</code></td>
+              <td>Initial visible year when there is no <code>value</code>. After connect, drive with <code>.yearView</code>.</td>
+            </tr>
+            <tr>
+              <td><code>months-view="12"</code></td>
+              <td>Initial visible month (1–12) when there is no <code>value</code>. After connect, drive with <code>.monthsView</code>.</td>
+            </tr>
+            <tr>
+              <td><code>name="booking"</code></td>
+              <td>Form-associated. Submits the ISO date; form reset clears <code>value</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
       <section id="bare">
         <h2>Bare month</h2>
         <p>No attributes. Current month, day buttons only.</p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar&gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
         <cali-calendar></cali-calendar>
       </section>
 
@@ -248,25 +396,31 @@ cali-calendar::part(selected-year-button) {
           Labels in the first row. Without offset, the 1st still starts in
           column one.
         </p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar with-weekdays&gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
         <cali-calendar with-weekdays></cali-calendar>
       </section>
 
       <section id="offset">
         <h2>Offset cells</h2>
         <p>Empty leading cells so the 1st lines up with its weekday.</p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar with-weekdays with-offset&gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
         <cali-calendar with-weekdays with-offset></cali-calendar>
       </section>
 
       <section id="monday">
         <h2>Monday first</h2>
         <p>Week starts on Monday. Default is Sunday.</p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   week-starts-on="mo"
   with-weekdays
   with-offset
 &gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
         <cali-calendar
           week-starts-on="mo"
           with-weekdays
@@ -282,11 +436,13 @@ cali-calendar::part(selected-year-button) {
           that panel is open. A fixed <code>calendar</code> height keeps the
           page from jumping between views.
         </p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   with-weekdays
   with-offset
   with-switcher
 &gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
         <cali-calendar
           with-weekdays
           with-offset
@@ -300,12 +456,14 @@ cali-calendar::part(selected-year-button) {
           <code>with-confirmation</code> previews the pick.
           <code>value</code> and <code>change</code> wait for Confirm.
         </p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   with-weekdays
   with-offset
   with-switcher
   with-confirmation
 &gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
         <cali-calendar
           id="confirmed"
           with-weekdays
@@ -313,7 +471,8 @@ cali-calendar::part(selected-year-button) {
           with-switcher
           with-confirmation
         ></cali-calendar>
-        <output id="confirmed-out">value is empty until Confirm.</output>
+        <h3 class="block-title">Preview</h3>
+        <output id="confirmed-out" class="preview">value is empty until Confirm.</output>
       </section>
 
       <section id="selected">
@@ -322,6 +481,7 @@ cali-calendar::part(selected-year-button) {
           <code>value</code> paints <code>selected-date-button</code>. Today keeps
           <code>current-date-button</code> even when it is not selected.
         </p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   value="2026-09-13"
   week-starts-on="mo"
@@ -329,6 +489,7 @@ cali-calendar::part(selected-year-button) {
   with-offset
   with-switcher
 &gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
         <cali-calendar
           value="2026-09-13"
           week-starts-on="mo"
@@ -344,6 +505,7 @@ cali-calendar::part(selected-year-button) {
           <code>year-view</code> and <code>months-view</code> set the initial
           view when there is no <code>value</code>.
         </p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   year-view="2025"
   months-view="12"
@@ -351,6 +513,7 @@ cali-calendar::part(selected-year-button) {
   with-offset
   with-switcher
 &gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
         <cali-calendar
           year-view="2025"
           months-view="12"
@@ -366,11 +529,13 @@ cali-calendar::part(selected-year-button) {
           Form-associated: <code>name</code> submits ISO <code>YYYY-MM-DD</code>.
           Reset clears <code>value</code>.
         </p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;form&gt;
   &lt;cali-calendar name="booking" with-weekdays with-offset&gt;&lt;/cali-calendar&gt;
   &lt;button&gt;Submit&lt;/button&gt;
   &lt;button type="reset"&gt;Reset&lt;/button&gt;
 &lt;/form&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
         <form id="booking-form">
           <cali-calendar
             name="booking"
@@ -381,7 +546,8 @@ cali-calendar::part(selected-year-button) {
             <button>Submit</button>
             <button type="reset">Reset</button>
           </p>
-          <output id="booking-out"></output>
+          <h3 class="block-title">Preview</h3>
+          <output id="booking-out" class="preview"></output>
         </form>
       </section>
 
@@ -391,17 +557,20 @@ cali-calendar::part(selected-year-button) {
           <code>change</code> reports the date.
           <code>beforechange</code> is cancelable — this one rejects Sundays.
         </p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-javascript">calendar.addEventListener("beforechange", (event) => {
   const date = new Date(`${event.detail.date}T00:00`);
   if (date.getDay() === 0) event.preventDefault();
 });</code></pre>
+        <h3 class="block-title">Example</h3>
         <cali-calendar
           id="guarded"
           week-starts-on="mo"
           with-weekdays
           with-offset
         ></cali-calendar>
-        <output id="guarded-out">Pick a date. Sundays stay unselected.</output>
+        <h3 class="block-title">Preview</h3>
+        <output id="guarded-out" class="preview">Pick a date. Sundays stay unselected.</output>
       </section>
 
       <section id="js">
@@ -410,8 +579,10 @@ cali-calendar::part(selected-year-button) {
           After connect, drive the visible period with
           <code>.yearView</code> and <code>.monthsView</code>.
         </p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-javascript">calendar.yearView = 2025;
 calendar.monthsView = 12;</code></pre>
+        <h3 class="block-title">Example</h3>
         <p>
           <button type="button" id="to-today">This month</button>
           <button type="button" id="to-december">December 2025</button>
@@ -430,6 +601,7 @@ calendar.monthsView = 12;</code></pre>
           Native <code>popover</code>. <code>change</code> writes the date on
           the trigger and closes the popover.
         </p>
+        <h3 class="block-title">Example</h3>
         <button type="button" id="date-trigger" popovertarget="date-popover">
           Pick a date
         </button>
@@ -440,12 +612,14 @@ calendar.monthsView = 12;</code></pre>
             with-switcher
           ></cali-calendar>
         </div>
+        <h3 class="block-title">Code — HTML</h3>
         <pre><code class="language-html">&lt;button type="button" popovertarget="date-popover" id="date-trigger"&gt;
   Pick a date
 &lt;/button&gt;
 &lt;div id="date-popover" popover&gt;
   &lt;cali-calendar with-weekdays with-offset with-switcher&gt;&lt;/cali-calendar&gt;
 &lt;/div&gt;</code></pre>
+        <h3 class="block-title">Code — JavaScript</h3>
         <pre><code class="language-javascript">calendar.addEventListener("change", (event) => {
   trigger.textContent = event.detail.date;
   popover.hidePopover();
@@ -464,12 +638,58 @@ popover.addEventListener("toggle", (event) => {
 });</code></pre>
       </section>
 
+      <section id="dialog">
+        <h2>Dialog</h2>
+        <p>
+          Native <code>dialog</code>. Pick a date, press Confirm —
+          <code>change</code> writes the date and closes the dialog.
+        </p>
+        <h3 class="block-title">Example</h3>
+        <button type="button" id="dialog-trigger">Pick a date</button>
+        <dialog id="date-dialog">
+          <cali-calendar
+            with-weekdays
+            with-offset
+            with-switcher
+            with-confirmation
+          ></cali-calendar>
+          <p>
+            <button type="button" id="dialog-close">Close</button>
+          </p>
+        </dialog>
+        <h3 class="block-title">Preview</h3>
+        <output id="dialog-out" class="preview">No date picked yet.</output>
+        <h3 class="block-title">Code — HTML</h3>
+        <pre><code class="language-html">&lt;button type="button" id="dialog-trigger"&gt;
+  Pick a date
+&lt;/button&gt;
+&lt;dialog id="date-dialog"&gt;
+  &lt;cali-calendar
+    with-weekdays
+    with-offset
+    with-switcher
+    with-confirmation
+  &gt;&lt;/cali-calendar&gt;
+&lt;/dialog&gt;</code></pre>
+        <h3 class="block-title">Code — JavaScript</h3>
+        <pre><code class="language-javascript">trigger.addEventListener("click", () => {
+  dialog.showModal();
+});
+
+calendar.addEventListener("change", (event) => {
+  trigger.textContent = event.detail.date;
+  output.textContent = event.detail.date;
+  dialog.close();
+});</code></pre>
+      </section>
+
       <section id="cdn">
         <h2>jsDelivr</h2>
         <p>
           <code>npm run minify</code> writes <code>calendar.min.js</code>.
           jsDelivr serves that file from GitHub; pin a tag when you have one.
         </p>
+        <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;script
   type="module"
   src="https://cdn.jsdelivr.net/gh/spacepolice10/cali-date-picker@main/calendar.min.js"
@@ -539,6 +759,22 @@ popover.addEventListener("toggle", (event) => {
             : rect.bottom + gap;
         popover.style.top = `${Math.max(0, top)}px`;
         popover.style.left = `${rect.left}px`;
+      });
+
+      const dialogTrigger = document.getElementById("dialog-trigger");
+      const dialog = document.getElementById("date-dialog");
+      const dialogCalendar = dialog.querySelector("cali-calendar");
+      const dialogOut = document.getElementById("dialog-out");
+      dialogTrigger.addEventListener("click", () => {
+        dialog.showModal();
+      });
+      document.getElementById("dialog-close").addEventListener("click", () => {
+        dialog.close();
+      });
+      dialogCalendar.addEventListener("change", (event) => {
+        dialogTrigger.textContent = event.detail.date;
+        dialogOut.textContent = event.detail.date;
+        dialog.close();
       });
     </script>
     <script type="module">
