@@ -1,6 +1,4 @@
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const YEAR_LIST_LENGTH = 10;
-const YEAR_LIST_OFFSET = 5;
 
 function toDate(value) {
   if (!value) return;
@@ -18,13 +16,19 @@ function toDate(value) {
 function toDateString(date) {
   return [
     String(date.getFullYear()).padStart(4, "0"),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
+    String(date.getMonth() + 101).slice(1),
+    String(date.getDate() + 100).slice(1),
   ].join("-");
 }
 
+// Shared month formatter — allocated once, not per render.
+const mf = new Intl.DateTimeFormat("en-US", { month: "long" });
 function monthLabel(date) {
-  return new Intl.DateTimeFormat("en-US", { month: "long" }).format(date);
+  return mf.format(date);
+}
+
+function butn(part, attrs, label) {
+  return `<button type="button" part="${part}"${attrs}>${label}</button>`;
 }
 
 /**
@@ -69,19 +73,33 @@ export class CaliCalendar extends HTMLElement {
   #switcher;
   #confirmation;
   #preview;
-  #actions = {
-    selectDate: (el) => this.#selectDate(el.dataset.date),
-    confirmDate: () => this.#confirmDate(),
-    switchMonthsView: (el) => this.#switchMonthsView(Number(el.dataset.month)),
-    switchYearView: (el) => this.#switchYearView(Number(el.dataset.year)),
-    switchView: (el) => this.#switchView(el.dataset.view),
-    switchPeriod: (el) => this.#switchPeriod(Number(el.dataset.direction)),
-  };
-  #calendars = {
-    days: () => this.#renderDaysCalendar(),
-    months: () => this.#renderMonthsCalendar(),
-    year: () => this.#renderYearCalendar(),
-  };
+  // Short single-letter shadow-DOM actions: s=select c=confirm m=month
+  // y=year v=view p=period. `data-a` + payload (`data-d/m/y/v/p`).
+  #catchClick(event) {
+    const el = event.target.closest?.("[data-a]");
+    if (!el) return;
+    const d = el.dataset;
+    switch (d.a) {
+      case "s":
+        this.#selectDate(d.d);
+        break;
+      case "c":
+        this.#confirmDate();
+        break;
+      case "m":
+        this.#switchMonthsView(+d.m);
+        break;
+      case "y":
+        this.#switchYearView(+d.y);
+        break;
+      case "v":
+        this.#switchView(d.v);
+        break;
+      case "p":
+        this.#switchPeriod(+d.p);
+        break;
+    }
+  }
 
   constructor() {
     super();
@@ -115,7 +133,7 @@ export class CaliCalendar extends HTMLElement {
    * @type {number}
    */
   set yearView(value) {
-    this.#yearView = Number(value);
+    this.#yearView = +value;
     if (this.isConnected) this.#renderView();
   }
   get monthsView() {
@@ -126,7 +144,7 @@ export class CaliCalendar extends HTMLElement {
    * @type {number}
    */
   set monthsView(value) {
-    this.#monthsView = Number(value);
+    this.#monthsView = +value;
     if (this.isConnected) this.#renderView();
   }
   get value() {
@@ -139,9 +157,20 @@ export class CaliCalendar extends HTMLElement {
   set value(value) {
     this.setAttribute("value", value);
   }
-  get minval() {
-    const date = toDate(this.getAttribute("minval"));
+  #limit(name) {
+    const date = toDate(this.getAttribute(name));
     return date ? toDateString(date) : "";
+  }
+  #applyLimit(name, value) {
+    if (value) this.setAttribute(name, value);
+    else this.removeAttribute(name);
+    if (this.#preview && this.#isDisabled(this.#preview)) {
+      this.#preview = undefined;
+    }
+    if (this.isConnected) this.#renderView();
+  }
+  get minval() {
+    return this.#limit("minval");
   }
   /**
    * Earliest selectable date. Day buttons before it are disabled; views stay navigable.
@@ -149,16 +178,10 @@ export class CaliCalendar extends HTMLElement {
    * @type {IsoDate}
    */
   set minval(value) {
-    if (value) this.setAttribute("minval", value);
-    else this.removeAttribute("minval");
-    if (this.#preview && this.#isDisabled(this.#preview)) {
-      this.#preview = undefined;
-    }
-    if (this.isConnected) this.#renderView();
+    this.#applyLimit("minval", value);
   }
   get maxval() {
-    const date = toDate(this.getAttribute("maxval"));
-    return date ? toDateString(date) : "";
+    return this.#limit("maxval");
   }
   /**
    * Latest selectable date. Day buttons after it are disabled; views stay navigable.
@@ -166,46 +189,24 @@ export class CaliCalendar extends HTMLElement {
    * @type {IsoDate}
    */
   set maxval(value) {
-    if (value) this.setAttribute("maxval", value);
-    else this.removeAttribute("maxval");
-    if (this.#preview && this.#isDisabled(this.#preview)) {
-      this.#preview = undefined;
-    }
-    if (this.isConnected) this.#renderView();
+    this.#applyLimit("maxval", value);
   }
   get #weekStartsOn() {
     return this.getAttribute("week-starts-on") === "mo" ? "mo" : "su";
   }
-  get #withOffset() {
-    return this.hasAttribute("with-offset");
-  }
-  get #withWeekdays() {
-    return this.hasAttribute("with-weekdays");
-  }
-  get #withSwitcher() {
-    return this.hasAttribute("with-switcher");
-  }
-  get #withConfirmation() {
-    return this.hasAttribute("with-confirmation");
-  }
 
   #isDisabled(iso) {
-    if (!iso) return false;
     const min = this.minval;
     const max = this.maxval;
-    if (min && iso < min) return true;
-    if (max && iso > max) return true;
-    return false;
-  }
-
-  #catchClick(event) {
-    const el = event.target.closest?.("[data-action]");
-    this.#actions[el?.dataset.action]?.(el);
+    return !!(
+      iso &&
+      ((min && iso < min) || (max && iso > max))
+    );
   }
 
   #selectDate(date) {
     if (this.#isDisabled(date)) return;
-    if (this.#withConfirmation) {
+    if (this.hasAttribute("with-confirmation")) {
       this.#preview = date;
       this.#renderView();
       return;
@@ -220,19 +221,22 @@ export class CaliCalendar extends HTMLElement {
     this.#commitDate(this.#preview);
   }
 
-  #commitDate(date) {
-    if (this.#isDisabled(date)) return;
-    const allowed = this.dispatchEvent(
-      new CustomEvent("beforechange", {
+  #emit(type, date, cancelable) {
+    return this.dispatchEvent(
+      new CustomEvent(type, {
         bubbles: true,
-        cancelable: true,
+        cancelable,
         detail: { date },
       })
     );
-    if (!allowed) return;
+  }
+
+  #commitDate(date) {
+    if (this.#isDisabled(date)) return;
+    if (!this.#emit("beforechange", date, true)) return;
 
     this.value = date;
-    this.#emitChange();
+    this.#emit("change", this.value);
   }
 
   #switchMonthsView(month) {
@@ -244,19 +248,21 @@ export class CaliCalendar extends HTMLElement {
   #switchYearView(year) {
     this.#currentView = "days";
     this.#yearView = year;
-    this.#snapYearList();
+    this.#yearListStart = year - 5;
     this.#renderView();
   }
 
   #switchView(next) {
     this.#currentView = next === this.#currentView ? "days" : next;
-    if (this.#currentView === "year") this.#snapYearList();
+    if (this.#currentView === "year")
+      this.#yearListStart = this.#yearView - 5;
     this.#renderView();
   }
 
   #switchPeriod(direction) {
     if (this.#currentView === "year") {
-      this.#scrollYearList(direction);
+      this.#yearListStart ??= this.#yearView - 5;
+      this.#yearListStart += direction * 10;
       this.#renderView();
       return;
     }
@@ -275,28 +281,6 @@ export class CaliCalendar extends HTMLElement {
     this.#renderView();
   }
 
-  #scrollYearList(direction) {
-    this.#yearListStart ??= this.#yearView - YEAR_LIST_OFFSET;
-    this.#yearListStart += direction * YEAR_LIST_LENGTH;
-  }
-
-  #snapYearList() {
-    this.#yearListStart = this.#yearView - YEAR_LIST_OFFSET;
-  }
-
-  #emitChange() {
-    this.dispatchEvent(
-      new CustomEvent("change", {
-        bubbles: true,
-        detail: { date: this.value },
-      })
-    );
-  }
-
-  #viewDate() {
-    return new Date(this.#yearView, this.#monthsView - 1, 1);
-  }
-
   #ensureView() {
     if (this.#yearView && this.#monthsView) return;
 
@@ -309,9 +293,9 @@ export class CaliCalendar extends HTMLElement {
 
     const currentDate = new Date();
     this.#yearView =
-      Number(this.getAttribute("year-view")) || currentDate.getFullYear();
+      +this.getAttribute("year-view") || currentDate.getFullYear();
     this.#monthsView =
-      Number(this.getAttribute("months-view")) || currentDate.getMonth() + 1;
+      +this.getAttribute("months-view") || currentDate.getMonth() + 1;
   }
 
   #applyValue(raw) {
@@ -338,12 +322,6 @@ export class CaliCalendar extends HTMLElement {
     this.#internals.setFormValue(normalized);
   }
 
-  #fragment(html) {
-    const template = document.createElement("template");
-    template.innerHTML = html;
-    return template.content;
-  }
-
   #renderView() {
     this.dataset.view = this.#currentView;
     this.#renderSwitcher();
@@ -352,7 +330,7 @@ export class CaliCalendar extends HTMLElement {
   }
 
   #renderSwitcher() {
-    if (!this.#withSwitcher) {
+    if (!this.hasAttribute("with-switcher")) {
       this.#switcher?.remove();
       this.#switcher = undefined;
       return;
@@ -364,19 +342,34 @@ export class CaliCalendar extends HTMLElement {
       this.shadowRoot.prepend(this.#switcher);
     }
 
-    const viewDate = this.#viewDate();
+    const viewDate = new Date(this.#yearView, this.#monthsView - 1, 1);
     const monthsOpen = this.#currentView === "months";
     const yearOpen = this.#currentView === "year";
-    this.#switcher.innerHTML = `
-      <button type="button" part="previous" data-action="switchPeriod" data-direction="-1" aria-label="Previous period">Previous</button>
-      <button type="button" part="view-months${monthsOpen ? " selected-view" : ""}" data-action="switchView" data-view="months" aria-pressed="${monthsOpen}">${monthLabel(viewDate)}</button>
-      <button type="button" part="view-year${yearOpen ? " selected-view" : ""}" data-action="switchView" data-view="year" aria-pressed="${yearOpen}">${this.#yearView}</button>
-      <button type="button" part="next" data-action="switchPeriod" data-direction="1" aria-label="Next period">Next</button>
-    `;
+    this.#switcher.innerHTML =
+      butn(
+        "previous",
+        ` data-a="p" data-p="-1" aria-label="Previous period"`,
+        "Previous"
+      ) +
+      butn(
+        `view-months${monthsOpen ? " selected-view" : ""}`,
+        ` data-a="v" data-v="months" aria-pressed="${monthsOpen}"`,
+        monthLabel(viewDate)
+      ) +
+      butn(
+        `view-year${yearOpen ? " selected-view" : ""}`,
+        ` data-a="v" data-v="year" aria-pressed="${yearOpen}"`,
+        this.#yearView
+      ) +
+      butn(
+        "next",
+        ` data-a="p" data-p="1" aria-label="Next period"`,
+        "Next"
+      );
   }
 
   #renderConfirmation() {
-    if (!this.#withConfirmation) {
+    if (!this.hasAttribute("with-confirmation")) {
       this.#confirmation?.remove();
       this.#confirmation = undefined;
       return;
@@ -393,10 +386,13 @@ export class CaliCalendar extends HTMLElement {
         this.#preview !== this.value &&
         !this.#isDisabled(this.#preview)
     );
-    this.#confirmation.innerHTML = `
-      <span part="preview">${preview}</span>
-      <button type="button" part="confirm" data-action="confirmDate" ${confirmable ? "" : "disabled"}>Confirm</button>
-    `;
+    this.#confirmation.innerHTML =
+      `<span part="preview">${preview}</span>` +
+      butn(
+        "confirm",
+        ` data-a="c"${confirmable ? "" : " disabled"}`,
+        "Confirm"
+      );
     if (this.#confirmation.parentNode !== this.shadowRoot) {
       this.shadowRoot.append(this.#confirmation);
     }
@@ -407,7 +403,13 @@ export class CaliCalendar extends HTMLElement {
       this.#wrap = document.createElement("div");
       this.#wrap.part = "calendar";
     }
-    this.#wrap.replaceChildren(this.#calendars[this.#currentView]());
+    const view = this.#currentView;
+    this.#wrap.innerHTML =
+      view === "months"
+        ? this.#renderMonthsCalendar()
+        : view === "year"
+          ? this.#renderYearCalendar()
+          : this.#renderDaysCalendar();
     if (this.#wrap.parentNode !== this.shadowRoot) {
       this.shadowRoot.append(this.#wrap);
     }
@@ -416,9 +418,9 @@ export class CaliCalendar extends HTMLElement {
   #renderDaysCalendar() {
     const pieces = [];
     const startsWithMonday = this.#weekStartsOn === "mo";
-    const viewDate = this.#viewDate();
+    const viewDate = new Date(this.#yearView, this.#monthsView - 1, 1);
 
-    if (this.#withWeekdays) {
+    if (this.hasAttribute("with-weekdays")) {
       const weekdays = startsWithMonday
         ? [...WEEKDAYS.slice(1), WEEKDAYS[0]]
         : WEEKDAYS;
@@ -427,7 +429,7 @@ export class CaliCalendar extends HTMLElement {
       }
     }
 
-    if (this.#withOffset) {
+    if (this.hasAttribute("with-offset")) {
       const offsetNumber =
         (viewDate.getDay() - (startsWithMonday ? 1 : 0) + 7) % 7;
       for (let index = 0; index < offsetNumber; index += 1) {
@@ -436,16 +438,14 @@ export class CaliCalendar extends HTMLElement {
     }
 
     const currentDate = toDateString(new Date());
-    const monthsDays = new Date(
-      viewDate.getFullYear(),
-      viewDate.getMonth() + 1,
-      0
-    ).getDate();
+    const y = viewDate.getFullYear();
+    // Padded once: month is fixed for the whole grid, year too.
+    const yp = String(y).padStart(4, "0");
+    const mp = ("0" + (viewDate.getMonth() + 1)).slice(-2);
+    const monthsDays = new Date(y, viewDate.getMonth() + 1, 0).getDate();
 
     for (let dayNumber = 1; dayNumber <= monthsDays; dayNumber += 1) {
-      const date = toDateString(
-        new Date(viewDate.getFullYear(), viewDate.getMonth(), dayNumber)
-      );
+      const date = `${yp}-${mp}-${("0" + dayNumber).slice(-2)}`;
       const isSelected = date === (this.#preview || this.value);
       const isCurrent = date === currentDate;
       const isDisabled = this.#isDisabled(date);
@@ -455,65 +455,49 @@ export class CaliCalendar extends HTMLElement {
         ...(isCurrent ? ["current-date-button"] : []),
         ...(isDisabled ? ["disabled-date-button"] : []),
       ].join(" ");
-      pieces.push(`
-        <button
-          type="button"
-          part="${parts}"
-          aria-pressed="${isSelected}"
-          aria-disabled="${isDisabled}"
-          data-action="selectDate"
-          data-date="${date}"
-          ${isDisabled ? "disabled" : ""}
-        >${dayNumber}</button>
-      `);
+      pieces.push(
+        butn(
+          parts,
+          ` aria-pressed="${isSelected}" aria-disabled="${isDisabled}" data-a="s" data-d="${date}"${isDisabled ? " disabled" : ""}`,
+          dayNumber
+        )
+      );
     }
 
-    return this.#fragment(pieces.join(""));
+    return pieces.join("");
   }
 
   #renderMonthsCalendar() {
-    return this.#fragment(
-      Array.from({ length: 12 }, (_, index) => {
+    return Array.from({ length: 12 }, (_, index) => {
         const monthIndex = index + 1;
         const isSelected = monthIndex === this.#monthsView;
         const parts = [
           "months-button",
           ...(isSelected ? ["selected-months-button"] : []),
         ].join(" ");
-        return `
-          <button
-            type="button"
-            part="${parts}"
-            aria-pressed="${isSelected}"
-            data-action="switchMonthsView"
-            data-month="${monthIndex}"
-          >${monthLabel(new Date(this.#yearView, index, 1))}</button>
-        `;
-      }).join("")
-    );
+        return butn(
+          parts,
+          ` aria-pressed="${isSelected}" data-a="m" data-m="${monthIndex}"`,
+          monthLabel(new Date(this.#yearView, index, 1))
+        );
+      }).join("");
   }
 
   #renderYearCalendar() {
-    this.#yearListStart ??= this.#yearView - YEAR_LIST_OFFSET;
-    return this.#fragment(
-      Array.from({ length: YEAR_LIST_LENGTH }, (_, offset) => {
+    this.#yearListStart ??= this.#yearView - 5;
+    return Array.from({ length: 10 }, (_, offset) => {
         const year = this.#yearListStart + offset;
         const isSelected = year === this.#yearView;
         const parts = [
           "year-button",
           ...(isSelected ? ["selected-year-button"] : []),
         ].join(" ");
-        return `
-          <button
-            type="button"
-            part="${parts}"
-            aria-pressed="${isSelected}"
-            data-action="switchYearView"
-            data-year="${year}"
-          >${year}</button>
-        `;
-      }).join("")
-    );
+        return butn(
+          parts,
+          ` aria-pressed="${isSelected}" data-a="y" data-y="${year}"`,
+          year
+        );
+      }).join("");
   }
 }
 
