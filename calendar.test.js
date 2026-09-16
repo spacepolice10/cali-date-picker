@@ -206,28 +206,37 @@ describe("demo: period switcher", () => {
   });
 });
 
-// #confirmation — Stages the pick; value/change wait for Confirm.
-describe("demo: confirm", () => {
-  it("previews without committing until Confirm", () => {
+// Recipe: external confirm — veto in beforechange, commit from page JS.
+describe("recipe: external confirm", () => {
+  it("stages the pick outside, commits on external Confirm", () => {
     const el = mount({
       "months-view": "12",
       "year-view": "2025",
       "with-weekdays": true,
       "with-offset": true,
       "with-switcher": true,
+    });
+    let staged = "";
+    el.addEventListener("beforechange", (event) => {
+      event.preventDefault();
+      staged = event.detail.date;
+    });
+    clickBtn(el, '[data-d="2025-12-24"]');
+    expect(el.getAttribute("value") ?? "").toBe("");
+    expect(staged).toBe("2025-12-24");
+    el.value = staged; // external Confirm button
+    expect(el.getAttribute("value")).toBe("2025-12-24");
+  });
+
+  it("ignores the removed with-confirmation attribute", () => {
+    const el = mount({
+      "months-view": "12",
+      "year-view": "2025",
       "with-confirmation": true,
     });
-    const changes = [];
-    el.addEventListener("change", (e) => changes.push(e.detail.date));
     clickBtn(el, '[data-d="2025-12-24"]');
-    expect(el.getAttribute("value") ?? "").not.toBe("2025-12-24");
-    expect(changes).toHaveLength(0);
-    expect(
-      el.shadowRoot.querySelector('[part="preview"]').textContent
-    ).toContain("2025-12-24");
-    clickBtn(el, '[data-a="c"]');
     expect(el.getAttribute("value")).toBe("2025-12-24");
-    expect(changes).toEqual(["2025-12-24"]);
+    expect(el.shadowRoot.querySelector('[data-a="c"]')).toBeNull();
   });
 });
 
@@ -413,7 +422,7 @@ describe("demo: yearView / monthsView from JS", () => {
 
 // #popover + #dialog — change payload drives trigger text and close.
 describe("demo: popover / dialog wiring", () => {
-  it("change detail can update a trigger and staged confirm works", () => {
+  it("change detail can update a trigger", () => {
     const trigger = document.createElement("button");
     trigger.textContent = "Pick a date";
     document.body.appendChild(trigger);
@@ -434,18 +443,15 @@ describe("demo: popover / dialog wiring", () => {
     expect(closed).toBe(true);
   });
 
-  it("dialog variant with confirmation commits on Confirm", () => {
+  it("dialog variant commits on day click", () => {
     const el = mount({
       "with-weekdays": true,
       "with-offset": true,
       "with-switcher": true,
-      "with-confirmation": true,
       "months-view": "12",
       "year-view": "2025",
     });
     clickBtn(el, '[data-d="2025-12-05"]');
-    expect(el.getAttribute("value") ?? "").toBe("");
-    clickBtn(el, '[data-a="c"]');
     expect(el.getAttribute("value")).toBe("2025-12-05");
   });
 });

@@ -46,7 +46,6 @@ function butn(part, attrs, label) {
  * @attr {boolean} [with-offset] Adds empty leading cells so the 1st lines up with its weekday.
  * @attr {boolean} [with-weekdays] Shows weekday labels in the first row.
  * @attr {boolean} [with-switcher] Shows prev/next plus month and year view switching.
- * @attr {boolean} [with-confirmation] Stages the pick; `value`/`change` wait for Confirm.
  * @attr {number} [year-view] Initial visible year when there is no `value`. After connect use `.yearView`.
  * @attr {number} [months-view] Initial visible month (1-12) when there is no `value`. After connect use `.monthsView`.
  * @attr {string} [name] Form-associated name. Submits the ISO date; form reset clears `value`.
@@ -61,7 +60,6 @@ export class CaliCalendar extends HTMLElement {
     "with-offset",
     "with-weekdays",
     "with-switcher",
-    "with-confirmation",
   ];
 
   #internals;
@@ -71,26 +69,21 @@ export class CaliCalendar extends HTMLElement {
   #yearListStart;
   #wrap;
   #switcher;
-  #confirmation;
-  #preview;
-  // Short single-letter shadow-DOM actions: s=select c=confirm m=month
-  // y=year v=view p=period. `data-a` + payload (`data-d/m/y/v/p`).
+  // Short single-letter shadow-DOM actions: s=select m=month y=year
+  // v=view p=period. `data-a` + payload (`data-d/m/y/v/p`).
   #catchClick(event) {
     const el = event.target.closest?.("[data-a]");
     if (!el) return;
     const d = el.dataset;
     switch (d.a) {
       case "s":
-        this.#selectDate(d.d);
-        break;
-      case "c":
-        this.#confirmDate();
+        this.#commitDate(d.d);
         break;
       case "m":
-        this.#switchMonthsView(+d.m);
+        this.#switchFromMonths(+d.m);
         break;
       case "y":
-        this.#switchYearView(+d.y);
+        this.#switchFromYear(+d.y);
         break;
       case "v":
         this.#switchView(d.v);
@@ -164,9 +157,6 @@ export class CaliCalendar extends HTMLElement {
   #applyLimit(name, value) {
     if (value) this.setAttribute(name, value);
     else this.removeAttribute(name);
-    if (this.#preview && this.#isDisabled(this.#preview)) {
-      this.#preview = undefined;
-    }
     if (this.isConnected) this.#renderView();
   }
   get minval() {
@@ -204,23 +194,6 @@ export class CaliCalendar extends HTMLElement {
     );
   }
 
-  #selectDate(date) {
-    if (this.#isDisabled(date)) return;
-    if (this.hasAttribute("with-confirmation")) {
-      this.#preview = date;
-      this.#renderView();
-      return;
-    }
-
-    this.#commitDate(date);
-  }
-
-  #confirmDate() {
-    if (!this.#preview || this.#preview === this.value) return;
-    if (this.#isDisabled(this.#preview)) return;
-    this.#commitDate(this.#preview);
-  }
-
   #emit(type, date, cancelable) {
     return this.dispatchEvent(
       new CustomEvent(type, {
@@ -239,13 +212,13 @@ export class CaliCalendar extends HTMLElement {
     this.#emit("change", this.value);
   }
 
-  #switchMonthsView(month) {
+  #switchFromMonths(month) {
     this.#currentView = "days";
     this.#monthsView = month;
     this.#renderView();
   }
 
-  #switchYearView(year) {
+  #switchFromYear(year) {
     this.#currentView = "days";
     this.#yearView = year;
     this.#yearListStart = year - 5;
@@ -301,7 +274,6 @@ export class CaliCalendar extends HTMLElement {
   #applyValue(raw) {
     const date = toDate(raw);
     if (!date) {
-      this.#preview = undefined;
       if (raw) {
         this.setAttribute("value", "");
         return;
@@ -316,7 +288,6 @@ export class CaliCalendar extends HTMLElement {
       return;
     }
 
-    this.#preview = normalized;
     this.#yearView = date.getFullYear();
     this.#monthsView = date.getMonth() + 1;
     this.#internals.setFormValue(normalized);
@@ -326,7 +297,6 @@ export class CaliCalendar extends HTMLElement {
     this.dataset.view = this.#currentView;
     this.#renderSwitcher();
     this.#renderCalendarWrap();
-    this.#renderConfirmation();
   }
 
   #renderSwitcher() {
@@ -366,36 +336,6 @@ export class CaliCalendar extends HTMLElement {
         ` data-a="p" data-p="1" aria-label="Next period"`,
         "Next"
       );
-  }
-
-  #renderConfirmation() {
-    if (!this.hasAttribute("with-confirmation")) {
-      this.#confirmation?.remove();
-      this.#confirmation = undefined;
-      return;
-    }
-
-    if (!this.#confirmation) {
-      this.#confirmation = document.createElement("div");
-      this.#confirmation.part = "confirmation";
-    }
-
-    const preview = this.#preview || this.value;
-    const confirmable = Boolean(
-      this.#preview &&
-        this.#preview !== this.value &&
-        !this.#isDisabled(this.#preview)
-    );
-    this.#confirmation.innerHTML =
-      `<span part="preview">${preview}</span>` +
-      butn(
-        "confirm",
-        ` data-a="c"${confirmable ? "" : " disabled"}`,
-        "Confirm"
-      );
-    if (this.#confirmation.parentNode !== this.shadowRoot) {
-      this.shadowRoot.append(this.#confirmation);
-    }
   }
 
   #renderCalendarWrap() {
@@ -446,7 +386,7 @@ export class CaliCalendar extends HTMLElement {
 
     for (let dayNumber = 1; dayNumber <= monthsDays; dayNumber += 1) {
       const date = `${yp}-${mp}-${("0" + dayNumber).slice(-2)}`;
-      const isSelected = date === (this.#preview || this.value);
+      const isSelected = date === this.value;
       const isCurrent = date === currentDate;
       const isDisabled = this.#isDisabled(date);
       const parts = [

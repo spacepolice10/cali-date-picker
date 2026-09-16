@@ -97,7 +97,6 @@
         background: var(--accent-color);
       }
 
-      .to-menu,
       .pager-dots {
         display: none;
       }
@@ -117,103 +116,31 @@
           overflow: hidden;
         }
 
-        /* Two full-screen pages: sidebar | examples. Snap horizontally. */
+        /* Examples first: content is the scroll view.
+           The dots rail opens the section list as a dialog. */
         .page {
-          display: flex;
-          flex-direction: row;
+          display: block;
           height: 100vh;
           height: 100dvh;
-          overflow-x: auto;
-          overflow-y: hidden;
-          scroll-snap-type: x mandatory;
-          scrollbar-width: none;
         }
 
-        .page::-webkit-scrollbar {
-          display: none;
-        }
-
-        .sidebar,
         .content {
-          flex: 0 0 100%;
-          width: 100%;
           height: 100vh;
           height: 100dvh;
           overflow-y: auto;
           overflow-x: hidden;
-          scroll-snap-align: start;
-          scroll-snap-stop: always;
           box-sizing: border-box;
           overscroll-behavior-y: contain;
-        }
-
-        /* Page 1: menu, kept on the left, vertically scrollable. */
-        .sidebar {
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding: calc(var(--space-h) * 3) calc(var(--space-h) * 2);
-        }
-
-        .sidebar nav ul {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          overflow: visible;
-        }
-
-        .sidebar nav li {
-          margin-block: 0;
-        }
-
-        .sidebar nav a {
-          text-decoration: none;
-          white-space: normal;
-          font-size: 1.1rem;
-          padding-block: 6px;
-        }
-
-        /* Page 2: examples. Extra left padding clears the dot rail. */
-        .content {
           padding: var(--space-h) calc(var(--space-h) * 2) calc(var(--space-h) * 4)
             calc(var(--space-h) * 2 + 22px);
         }
 
-        .to-menu {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          margin-block-end: var(--space-h);
-          background: none;
-          border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
-          border-radius: 999px;
-          padding: 4px 12px 4px 8px;
-          color: inherit;
-          font: inherit;
-          cursor: pointer;
+        .sidebar {
+          display: none;
         }
 
-        .to-menu .icon {
-          flex: none;
-          width: 14px;
-          height: 14px;
-          background: currentColor;
-          -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 6l-6 6 6 6'/%3E%3C/svg%3E");
-          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 6l-6 6 6 6'/%3E%3C/svg%3E");
-          -webkit-mask-size: contain;
-          mask-size: contain;
-          -webkit-mask-repeat: no-repeat;
-          mask-repeat: no-repeat;
-          -webkit-mask-position: center;
-          mask-position: center;
-        }
-
-        main > section {
-          scroll-margin-top: var(--space-h);
-        }
-
-        /* Slim square rail pinned to the left edge: one tap anywhere
-           opens the menu. Dots mirror the visible section. Mobile only. */
+        /* Slim rail pinned to the left edge: one tap opens
+           the full section list. Dots mirror the visible section. */
         .pager-dots {
           display: flex;
           flex-direction: column;
@@ -230,15 +157,6 @@
           border-left: none;
           border-radius: 0;
           cursor: pointer;
-          transition: opacity 0.25s ease, translate 0.25s ease, visibility 0s;
-        }
-
-        .pager-dots.is-hidden {
-          opacity: 0;
-          translate: -100% 0;
-          pointer-events: none;
-          visibility: hidden;
-          transition: opacity 0.25s ease, translate 0.25s ease, visibility 0s 0.25s;
         }
 
         .pager-dots-list {
@@ -270,6 +188,56 @@
           opacity: 1;
           transform: scale(1.35);
           background: var(--accent-color);
+        }
+
+        /* Section list as a left-side sheet. Native dialog:
+           Escape and backdrop come free. */
+        #nav-dialog {
+          position: fixed;
+          inset-block: 0;
+          left: 0;
+          right: auto;
+          margin: 0;
+          padding: calc(var(--space-h) * 2);
+          border: none;
+          border-right: 1px solid color-mix(in srgb, var(--primary-color) 20%, transparent);
+          background: var(--secondary-color);
+          color: inherit;
+          width: min(78vw, 300px);
+          max-width: none;
+          height: 100vh;
+          height: 100dvh;
+          max-height: none;
+          box-sizing: border-box;
+          overflow-y: auto;
+        }
+
+        #nav-dialog::backdrop {
+          background: color-mix(in srgb, var(--primary-color) 50%, transparent);
+        }
+
+        #nav-dialog nav ul {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        #nav-dialog nav a {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          color: var(--primary-color);
+          text-decoration: none;
+          white-space: normal;
+          font-size: 1.1rem;
+          padding-block: 6px;
+        }
+
+        main > section {
+          scroll-margin-top: var(--space-h);
         }
       }
 
@@ -454,21 +422,6 @@
         margin-block-end: var(--space-h);
       }
 
-      cali-calendar::part(confirmation) {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--space-v);
-        margin-block-start: var(--space-h);
-      }
-
-      cali-calendar::part(preview) {
-        flex: 1;
-        border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
-        background: color-mix(in srgb, var(--primary-color) 6%, transparent);
-        padding: var(--space-v) var(--space-h);
-      }
-
       cali-calendar::part(calendar) {
         display: grid;
         gap: var(--space-v);
@@ -507,7 +460,6 @@
       cali-calendar::part(next),
       cali-calendar::part(view-months),
       cali-calendar::part(view-year),
-      cali-calendar::part(confirm),
       cali-calendar::part(date-button),
       cali-calendar::part(months-button),
       cali-calendar::part(year-button) {
@@ -556,7 +508,6 @@
             <li><a href="#offset">Offset cells</a></li>
             <li><a href="#monday">Monday first</a></li>
             <li><a href="#switcher">Period switcher</a></li>
-            <li><a href="#confirmation">Confirm</a></li>
             <li><a href="#selected">Selected vs today</a></li>
             <li><a href="#range">Range</a></li>
             <li><a href="#open">Open on a month</a></li>
@@ -573,7 +524,6 @@
 
       <div class="content">
         <header>
-          <button type="button" class="to-menu" id="to-menu"><i class="icon icon-chevron-left" aria-hidden="true"></i>Menu</button>
           <h1>Cali Calendar</h1>
           <p>
             One month at a time. Attributes configure the grid; CSS parts and
@@ -595,7 +545,6 @@
           <li><code>::part(period-switcher)</code></li>
           <li><code>::part(previous)</code> / <code>::part(next)</code></li>
           <li><code>::part(view-months)</code> / <code>::part(view-year)</code> / <code>::part(selected-view)</code></li>
-          <li><code>::part(confirmation)</code> / <code>::part(preview)</code> / <code>::part(confirm)</code></li>
           <li><code>::part(calendar)</code></li>
           <li><code>::part(weekday)</code></li>
           <li><code>::part(offset)</code></li>
@@ -664,10 +613,6 @@ cali-calendar::part(selected-year-button) {
             <tr>
               <td><code>with-switcher</code></td>
               <td>Shows prev / next plus month and year buttons to switch <code>data-view</code> between days, months, and year panels.</td>
-            </tr>
-            <tr>
-              <td><code>with-confirmation</code></td>
-              <td>Stages the pick in <code>::part(preview)</code>. <code>value</code> and <code>change</code> only update after Confirm.</td>
             </tr>
             <tr>
               <td><code>year-view="2025"</code></td>
@@ -752,31 +697,6 @@ cali-calendar::part(selected-year-button) {
           with-offset
           with-switcher
         ></cali-calendar>
-      </section>
-
-      <section id="confirmation">
-        <h2>Confirm</h2>
-        <p>
-          <code>with-confirmation</code> previews the pick.
-          <code>value</code> and <code>change</code> wait for Confirm.
-        </p>
-        <h3 class="block-title">Code</h3>
-        <pre><code class="language-html">&lt;cali-calendar
-  with-weekdays
-  with-offset
-  with-switcher
-  with-confirmation
-&gt;&lt;/cali-calendar&gt;</code></pre>
-        <h3 class="block-title">Example</h3>
-        <cali-calendar
-          id="confirmed"
-          with-weekdays
-          with-offset
-          with-switcher
-          with-confirmation
-        ></cali-calendar>
-        <h3 class="block-title">Preview</h3>
-        <output id="confirmed-out" class="preview">value is empty until Confirm.</output>
       </section>
 
       <section id="selected">
@@ -1025,7 +945,7 @@ popover.addEventListener("toggle", (event) => {
       <section id="dialog">
         <h2>Dialog</h2>
         <p>
-          Native <code>dialog</code>. Pick a date, press Confirm —
+          Native <code>dialog</code>. Pick a date —
           <code>change</code> writes the date and closes the dialog.
         </p>
         <h3 class="block-title">Example</h3>
@@ -1035,7 +955,6 @@ popover.addEventListener("toggle", (event) => {
             with-weekdays
             with-offset
             with-switcher
-            with-confirmation
           ></cali-calendar>
           <p>
             <button type="button" id="dialog-close">Close</button>
@@ -1052,7 +971,6 @@ popover.addEventListener("toggle", (event) => {
     with-weekdays
     with-offset
     with-switcher
-    with-confirmation
   &gt;&lt;/cali-calendar&gt;
 &lt;/dialog&gt;</code></pre>
         <h3 class="block-title">Code — JavaScript</h3>
@@ -1084,9 +1002,18 @@ calendar.addEventListener("change", (event) => {
       </div>
     </div>
 
-    <button type="button" class="pager-dots is-hidden" id="pager-dots" aria-label="Back to menu">
+    <button type="button" class="pager-dots" id="pager-dots" aria-label="Open section list">
       <span class="pager-dots-list" id="dots-list" aria-hidden="true"></span>
     </button>
+
+    <dialog id="nav-dialog" aria-label="Demo sections">
+      <nav aria-label="Demo sections">
+        <ul id="nav-list"></ul>
+        <p>
+          <button type="button" id="nav-close">Close</button>
+        </p>
+      </nav>
+    </dialog>
 
     <script type="module">
       import "./calendar.js";
@@ -1125,12 +1052,6 @@ calendar.addEventListener("change", (event) => {
       boundInput.addEventListener("change", () => {
         bound.value = boundInput.value;
         boundOut.textContent = boundInput.value || "(empty)";
-      });
-
-      const confirmed = document.getElementById("confirmed");
-      const confirmedOut = document.getElementById("confirmed-out");
-      confirmed.addEventListener("change", (event) => {
-        confirmedOut.textContent = `value=${event.detail.date}`;
       });
 
       const driven = document.getElementById("driven");
@@ -1178,6 +1099,12 @@ calendar.addEventListener("change", (event) => {
         dialogOut.textContent = event.detail.date;
         dialog.close();
       });
+      // Backdrop click closes either dialog (light dismiss).
+      for (const dlg of [dialog, document.getElementById("nav-dialog")]) {
+        dlg?.addEventListener("click", (event) => {
+          if (event.target === dlg) dlg.close();
+        });
+      }
     </script>
     <script type="module">
       import hljs from "https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/es/core.min.js";
@@ -1192,22 +1119,37 @@ calendar.addEventListener("change", (event) => {
       });
     </script>
     <script type="module">
-      const page = document.querySelector(".page");
       const sidebar = document.querySelector(".sidebar");
       const content = document.querySelector(".content");
       const nav = document.querySelector(".sidebar nav");
-      // Skip links hidden by CSS (e.g. desktop-only demos on mobile).
-      const links = [...nav.querySelectorAll("a")].filter(
-        (a) => a.offsetParent !== null,
-      );
+      const rail = document.getElementById("pager-dots");
+      const dotsList = document.getElementById("dots-list");
+      const dialog = document.getElementById("nav-dialog");
+      const dialogList = document.getElementById("nav-list");
+      const links = [...nav.querySelectorAll("a")];
+      // Skip sections hidden by CSS (e.g. desktop-only demos on mobile).
       const sections = links
         .map((link) => document.querySelector(link.hash))
-        .filter(Boolean);
+        .filter((section) => section && section.offsetParent !== null);
+      const sectionIds = new Set(sections.map((section) => `#${section.id}`));
       const mq = window.matchMedia("(max-width: 899px)");
       const isMobile = () => mq.matches;
 
-      // Keep the active link visible inside the sidebar only —
-      // never touch the horizontal pager scroll here.
+      // Full section list lives in the dialog on mobile.
+      dialogList.innerHTML = nav.querySelector("ul").innerHTML;
+      [...dialogList.querySelectorAll("a")].forEach((a) => {
+        if (!sectionIds.has(a.hash)) a.closest("li")?.remove();
+      });
+
+      const dots = sections.map((section) => {
+        const dot = document.createElement("span");
+        dot.dataset.hash = `#${section.id}`;
+        dotsList?.appendChild(dot);
+        return dot;
+      });
+
+      // Keep the active link visible inside the sidebar (desktop only —
+      // the sidebar is hidden on mobile).
       const keepLinkVisible = (link) => {
         const bar = sidebar.getBoundingClientRect();
         const rect = link.getBoundingClientRect();
@@ -1223,22 +1165,13 @@ calendar.addEventListener("change", (event) => {
         }
       };
 
-      const dotsNav = document.getElementById("pager-dots");
-      const dotsList = document.getElementById("dots-list");
-      const dots = links.map((link) => {
-        const dot = document.createElement("span");
-        dot.dataset.hash = link.hash;
-        dotsList?.appendChild(dot);
-        return dot;
-      });
-
       const setActive = (id, scrollNav = true) => {
         for (const link of links) {
           const isActive = link.hash === `#${id}`;
           link.classList.toggle("is-active", isActive);
           if (isActive) {
             link.setAttribute("aria-current", "true");
-            if (scrollNav) keepLinkVisible(link);
+            if (scrollNav && !isMobile()) keepLinkVisible(link);
           } else {
             link.removeAttribute("aria-current");
           }
@@ -1271,49 +1204,24 @@ calendar.addEventListener("change", (event) => {
         setActive(current, false);
       }
 
-      const goToExamples = () =>
-        page.scrollTo({ left: page.clientWidth, behavior: "smooth" });
-      const goToMenu = () => page.scrollTo({ left: 0, behavior: "smooth" });
-
-      document.getElementById("to-menu")?.addEventListener("click", goToMenu);
-      // The whole rail is one tap target back to the menu.
-      dotsNav?.addEventListener("click", goToMenu);
-
-      // On mobile the examples live in their own scroll container,
-      // so swipe the pager over first, then scroll the section inside it.
-      const openSection = (hash) => {
-        const section = document.querySelector(hash);
-        if (!section) return;
-        goToExamples();
-        history.replaceState(null, "", hash);
-        requestAnimationFrame(() => {
-          const top =
-            section.getBoundingClientRect().top -
-            content.getBoundingClientRect().top +
-            content.scrollTop;
-          content.scrollTo({ top, behavior: "smooth" });
-        });
-      };
-
-      nav.addEventListener("click", (event) => {
+      // The rail opens the section list; a pick closes and scrolls to it.
+      rail?.addEventListener("click", () => dialog.showModal());
+      document
+        .getElementById("nav-close")
+        ?.addEventListener("click", () => dialog.close());
+      dialogList.addEventListener("click", (event) => {
         const link = event.target.closest("a");
-        if (!link || !isMobile()) return;
+        if (!link) return;
         event.preventDefault();
-        openSection(link.hash);
+        dialog.close();
+        const section = document.querySelector(link.hash);
+        if (!section) return;
+        history.replaceState(null, "", link.hash);
+        content.scrollTop =
+          section.getBoundingClientRect().top -
+          content.getBoundingClientRect().top +
+          content.scrollTop;
       });
-
-      // The rail is only useful on the examples page — hide it while
-      // the menu page is visible.
-      const syncDotsVisibility = () => {
-        dotsNav?.classList.toggle(
-          "is-hidden",
-          !isMobile() || page.scrollLeft < page.clientWidth / 2,
-        );
-      };
-      page.addEventListener("scroll", syncDotsVisibility, { passive: true });
-      window.addEventListener("resize", syncDotsVisibility);
-      mq.addEventListener?.("change", syncDotsVisibility);
-      syncDotsVisibility();
     </script>
   </body>
 </html>
