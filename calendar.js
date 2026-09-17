@@ -49,6 +49,7 @@ function butn(part, attrs, label) {
  * @attr {number} [year-view] Initial visible year when there is no `value`. After connect use `.yearView`.
  * @attr {number} [months-view] Initial visible month (1-12) when there is no `value`. After connect use `.monthsView`.
  * @attr {string} [name] Form-associated name. Submits the ISO date; form reset clears `value`.
+ * @attr {boolean} [required] Form validation: empty `value` fails with `valueMissing`.
  * @fires CustomEvent<{date: IsoDate}> beforechange Cancelable, dispatched before `value` changes.
  * @fires CustomEvent<{date: IsoDate}> change Dispatched after `value` changes.
  */
@@ -60,38 +61,103 @@ export class CaliCalendar extends HTMLElement {
     "with-offset",
     "with-weekdays",
     "with-switcher",
+    "required",
   ];
 
   #internals;
-  #currentView = "days";
-  #monthsView;
-  #yearView;
-  #yearListStart;
-  #wrap;
-  #switcher;
+  #view = "days";
+  #Mo;
+  #yr;
+  #y0;
+  #grid;
+  #navi;
+  #fdate;
   // Short single-letter shadow-DOM actions: s=select m=month y=year
   // v=view p=period. `data-a` + payload (`data-d/m/y/v/p`).
-  #catchClick(event) {
+  #push(event) {
     const el = event.target.closest?.("[data-a]");
     if (!el) return;
     const d = el.dataset;
     switch (d.a) {
       case "s":
-        this.#commitDate(d.d);
+        this.#choose(d.d);
         break;
       case "m":
-        this.#switchFromMonths(+d.m);
+        this.#fromMon(+d.m);
         break;
       case "y":
-        this.#switchFromYear(+d.y);
+        this.#fromYr(+d.y);
         break;
       case "v":
-        this.#switchView(d.v);
+        this.#goto(d.v);
         break;
       case "p":
-        this.#switchPeriod(+d.p);
+        this.#step(+d.p);
         break;
     }
+  }
+
+  // Roving tabindex: one tab stop per grid. Tab / Shift+Tab leave
+  // naturally; arrows move inside. Never preventDefault Tab.
+  #seen(event) {
+    const el = event.target.closest?.("[data-a]");
+    if (!el || !this.#grid?.contains(el)) return;
+    if (el.dataset.a === "s") this.#fdate = el.dataset.d;
+    this.#tabs(el);
+  }
+
+  #keys(event) {
+    if (event.key === "Tab") return;
+    const el = event.target.closest?.("[data-a]");
+    if (!el || !this.#grid?.contains(el)) return;
+    // Every grid is one ordered button list (offsets/weekdays are spans),
+    // so arrows are index math: ±1 sideways, ±rw vertically, clamped.
+    // Period changes belong to Prev/Next, never to arrows.
+    const rw = this.#view === "months" ? 3 : this.#view === "year" ? 5 : 7;
+    const buttons = [...this.#grid.querySelectorAll("button")];
+    const at = buttons.indexOf(el);
+    if (at < 0) return;
+    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -rw, ArrowDown: rw }[event.key];
+    let to;
+    let walk;
+    if (event.key === "Home") {
+      to = 0;
+      walk = 1;
+    } else if (event.key === "End") {
+      to = buttons.length - 1;
+      walk = -1;
+    } else if (step) {
+      to = at + step;
+      walk = Math.sign(step);
+    } else {
+      return;
+    }
+    event.preventDefault();
+    while (to >= 0 && to < buttons.length && buttons[to].disabled) to += walk;
+    if (to < 0 || to >= buttons.length || buttons[to] === el) return;
+    if (buttons[to].dataset.a === "s") this.#fdate = buttons[to].dataset.d;
+    this.#tabs(buttons[to]);
+    buttons[to].focus();
+  }
+
+  #tabs(active) {
+    for (const butn of this.#grid.querySelectorAll("[data-a]")) {
+      if (butn.disabled) {
+        butn.tabIndex = -1;
+        continue;
+      }
+      butn.tabIndex = butn === active ? 0 : -1;
+    }
+  }
+
+  #prime(dateList) {
+    const inMonth = (iso) =>
+      iso && dateList.includes(iso) && !this.#off(iso);
+    if (inMonth(this.#fdate)) return this.#fdate;
+    if (inMonth(this.value)) return this.value;
+    const today = toDateString(new Date());
+    if (inMonth(today)) return today;
+    return dateList.find((iso) => !this.#off(iso)) ?? dateList[0];
   }
 
   constructor() {
@@ -99,19 +165,33 @@ export class CaliCalendar extends HTMLElement {
     this.#internals = this.attachInternals();
     this.attachShadow({ mode: "open" });
     this.shadowRoot.addEventListener("click", (event) =>
-      this.#catchClick(event)
+      this.#push(event)
+    );
+    this.shadowRoot.addEventListener("focusin", (event) =>
+      this.#seen(event)
+    );
+    this.shadowRoot.addEventListener("keydown", (event) =>
+      this.#keys(event)
     );
   }
 
   connectedCallback() {
-    this.#ensureView();
-    this.#renderView();
+    this.#ready();
+    this.#valid();
+    this.#show();
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue) return;
     if (name === "value") this.#applyValue(newValue);
-    if (this.isConnected) this.#renderView();
+    if (this.isConnected) {
+      // Upgrade path: attributes can change before connectedCallback
+      // ran #ready, leaving #yr/#Mo undefined and
+      // monthLabel(new Date(undefined, NaN, 1)) throwing RangeError.
+      this.#ready();
+      this.#valid();
+      this.#show();
+    }
   }
 
   formResetCallback() {
@@ -119,26 +199,26 @@ export class CaliCalendar extends HTMLElement {
   }
 
   get yearView() {
-    return this.#yearView;
+    return this.#yr;
   }
   /**
    * Visible year. Driven after connect; initial value comes from `year-view` or `value`.
    * @type {number}
    */
   set yearView(value) {
-    this.#yearView = +value;
-    if (this.isConnected) this.#renderView();
+    this.#yr = +value;
+    if (this.isConnected) this.#show();
   }
   get monthsView() {
-    return this.#monthsView;
+    return this.#Mo;
   }
   /**
    * Visible month (1-12). Driven after connect; initial value comes from `months-view` or `value`.
    * @type {number}
    */
   set monthsView(value) {
-    this.#monthsView = +value;
-    if (this.isConnected) this.#renderView();
+    this.#Mo = +value;
+    if (this.isConnected) this.#show();
   }
   get value() {
     return this.getAttribute("value") ?? "";
@@ -150,17 +230,32 @@ export class CaliCalendar extends HTMLElement {
   set value(value) {
     this.setAttribute("value", value);
   }
-  #limit(name) {
+  #lim(name) {
     const date = toDate(this.getAttribute(name));
     return date ? toDateString(date) : "";
   }
   #applyLimit(name, value) {
     if (value) this.setAttribute(name, value);
     else this.removeAttribute(name);
-    if (this.isConnected) this.#renderView();
+    if (this.isConnected) {
+      this.#valid();
+      this.#show();
+    }
+  }
+  // Native form validity from current state: required needs a value,
+  // minval/maxval bound it. No message — the browser supplies defaults.
+  #valid() {
+    const v = this.value;
+    this.#internals.setValidity(
+      !v && this.hasAttribute("required")
+        ? { valueMissing: true }
+        : v && this.#off(v)
+          ? { rangeUnderflow: v < this.minval, rangeOverflow: v > this.maxval }
+          : {}
+    );
   }
   get minval() {
-    return this.#limit("minval");
+    return this.#lim("minval");
   }
   /**
    * Earliest selectable date. Day buttons before it are disabled; views stay navigable.
@@ -171,7 +266,7 @@ export class CaliCalendar extends HTMLElement {
     this.#applyLimit("minval", value);
   }
   get maxval() {
-    return this.#limit("maxval");
+    return this.#lim("maxval");
   }
   /**
    * Latest selectable date. Day buttons after it are disabled; views stay navigable.
@@ -181,11 +276,11 @@ export class CaliCalendar extends HTMLElement {
   set maxval(value) {
     this.#applyLimit("maxval", value);
   }
-  get #weekStartsOn() {
+  get #wk() {
     return this.getAttribute("week-starts-on") === "mo" ? "mo" : "su";
   }
 
-  #isDisabled(iso) {
+  #off(iso) {
     const min = this.minval;
     const max = this.maxval;
     return !!(
@@ -194,7 +289,7 @@ export class CaliCalendar extends HTMLElement {
     );
   }
 
-  #emit(type, date, cancelable) {
+  #fire(type, date, cancelable) {
     return this.dispatchEvent(
       new CustomEvent(type, {
         bubbles: true,
@@ -204,70 +299,78 @@ export class CaliCalendar extends HTMLElement {
     );
   }
 
-  #commitDate(date) {
-    if (this.#isDisabled(date)) return;
-    if (!this.#emit("beforechange", date, true)) return;
+  #choose(date) {
+    if (this.#off(date)) return;
+    if (!this.#fire("beforechange", date, true)) return;
 
     this.value = date;
-    this.#emit("change", this.value);
+    this.#fire("change", this.value);
   }
 
-  #switchFromMonths(month) {
-    this.#currentView = "days";
-    this.#monthsView = month;
-    this.#renderView();
+  #fromMon(month) {
+    this.#view = "days";
+    this.#Mo = month;
+    this.#show();
   }
 
-  #switchFromYear(year) {
-    this.#currentView = "days";
-    this.#yearView = year;
-    this.#yearListStart = year - 5;
-    this.#renderView();
+  #fromYr(year) {
+    this.#view = "days";
+    this.#yr = year;
+    this.#y0 = year - 5;
+    this.#show();
   }
 
-  #switchView(next) {
-    this.#currentView = next === this.#currentView ? "days" : next;
-    if (this.#currentView === "year")
-      this.#yearListStart = this.#yearView - 5;
-    this.#renderView();
+  #goto(next) {
+    this.#view = next === this.#view ? "days" : next;
+    if (this.#view === "year")
+      this.#y0 = this.#yr - 5;
+    this.#show();
+    // Move focus into the newly shown grid so arrows work immediately.
+    // Fresh HTML already carries the right tabindex, so plain focus().
+    const sel = {
+      months: `[data-m="${this.#Mo}"]`,
+      year: `[data-y="${this.#yr}"]`,
+      days: '[tabindex="0"]',
+    }[this.#view];
+    this.#grid.querySelector(sel)?.focus();
   }
 
-  #switchPeriod(direction) {
-    if (this.#currentView === "year") {
-      this.#yearListStart ??= this.#yearView - 5;
-      this.#yearListStart += direction * 10;
-      this.#renderView();
+  #step(direction) {
+    if (this.#view === "year") {
+      this.#y0 ??= this.#yr - 5;
+      this.#y0 += direction * 10;
+      this.#show();
       return;
     }
 
-    if (this.#currentView === "months") {
-      this.#yearView += direction;
+    if (this.#view === "months") {
+      this.#yr += direction;
     } else {
       const date = new Date(
-        this.#yearView,
-        this.#monthsView - 1 + direction,
+        this.#yr,
+        this.#Mo - 1 + direction,
         1
       );
-      this.#yearView = date.getFullYear();
-      this.#monthsView = date.getMonth() + 1;
+      this.#yr = date.getFullYear();
+      this.#Mo = date.getMonth() + 1;
     }
-    this.#renderView();
+    this.#show();
   }
 
-  #ensureView() {
-    if (this.#yearView && this.#monthsView) return;
+  #ready() {
+    if (this.#yr && this.#Mo) return;
 
     const fromValue = toDate(this.value);
     if (fromValue) {
-      this.#yearView = fromValue.getFullYear();
-      this.#monthsView = fromValue.getMonth() + 1;
+      this.#yr = fromValue.getFullYear();
+      this.#Mo = fromValue.getMonth() + 1;
       return;
     }
 
     const currentDate = new Date();
-    this.#yearView =
+    this.#yr =
       +this.getAttribute("year-view") || currentDate.getFullYear();
-    this.#monthsView =
+    this.#Mo =
       +this.getAttribute("months-view") || currentDate.getMonth() + 1;
   }
 
@@ -288,38 +391,61 @@ export class CaliCalendar extends HTMLElement {
       return;
     }
 
-    this.#yearView = date.getFullYear();
-    this.#monthsView = date.getMonth() + 1;
+    this.#yr = date.getFullYear();
+    this.#Mo = date.getMonth() + 1;
     this.#internals.setFormValue(normalized);
   }
 
-  #renderView() {
-    this.dataset.view = this.#currentView;
-    this.#renderSwitcher();
-    this.#renderCalendarWrap();
+  #show() {
+    // Re-rendering replaces innerHTML, destroying the focused button.
+    // Capture it first so keyboard focus survives a selection.
+    const prevActive = this.shadowRoot.activeElement;
+    const prevA = prevActive?.dataset?.a;
+    // A selector matching the same button, e.g. [data-a="s"][data-d="…"].
+    const prevSel = prevActive?.dataset
+      ? ["a", "d", "m", "y", "v", "p"]
+          .filter((k) => prevActive.dataset[k])
+          .map((k) => `[data-${k}="${prevActive.dataset[k]}"]`)
+          .join("")
+      : "";
+    const inWrap = !!prevActive && !!this.#grid?.contains(prevActive);
+    const inSwitcher = !!prevActive && !!this.#navi?.contains(prevActive);
+    this.dataset.view = this.#view;
+    this.#showNav();
+    this.#showGrid();
+    if (!prevSel || (!inWrap && !inSwitcher)) return;
+    const scope =
+      prevA === "v" || prevA === "p" ? this.shadowRoot : this.#grid;
+    const butn = scope.querySelector(prevSel);
+    if (butn && !butn.disabled) {
+      butn.focus();
+      return;
+    }
+    // View changed (e.g. month picked -> days): focus the roving stop.
+    if (inWrap) this.#grid.querySelector('[tabindex="0"]')?.focus();
   }
 
-  #renderSwitcher() {
+  #showNav() {
     if (!this.hasAttribute("with-switcher")) {
-      this.#switcher?.remove();
-      this.#switcher = undefined;
+      this.#navi?.remove();
+      this.#navi = undefined;
       return;
     }
 
-    if (!this.#switcher) {
-      this.#switcher = document.createElement("div");
-      this.#switcher.part = "period-switcher";
-      this.shadowRoot.prepend(this.#switcher);
+    if (!this.#navi) {
+      this.#navi = document.createElement("div");
+      this.#navi.part = "period-switcher";
+      this.shadowRoot.prepend(this.#navi);
     }
 
-    const viewDate = new Date(this.#yearView, this.#monthsView - 1, 1);
-    const monthsOpen = this.#currentView === "months";
-    const yearOpen = this.#currentView === "year";
-    this.#switcher.innerHTML =
+    const viewDate = new Date(this.#yr, this.#Mo - 1, 1);
+    const monthsOpen = this.#view === "months";
+    const yearOpen = this.#view === "year";
+    this.#navi.innerHTML =
       butn(
         "previous",
         ` data-a="p" data-p="-1" aria-label="Previous period"`,
-        "Previous"
+        "Prev"
       ) +
       butn(
         `view-months${monthsOpen ? " selected-view" : ""}`,
@@ -329,7 +455,7 @@ export class CaliCalendar extends HTMLElement {
       butn(
         `view-year${yearOpen ? " selected-view" : ""}`,
         ` data-a="v" data-v="year" aria-pressed="${yearOpen}"`,
-        this.#yearView
+        this.#yr
       ) +
       butn(
         "next",
@@ -338,27 +464,27 @@ export class CaliCalendar extends HTMLElement {
       );
   }
 
-  #renderCalendarWrap() {
-    if (!this.#wrap) {
-      this.#wrap = document.createElement("div");
-      this.#wrap.part = "calendar";
+  #showGrid() {
+    if (!this.#grid) {
+      this.#grid = document.createElement("div");
+      this.#grid.part = "calendar";
     }
-    const view = this.#currentView;
-    this.#wrap.innerHTML =
+    const view = this.#view;
+    this.#grid.innerHTML =
       view === "months"
-        ? this.#renderMonthsCalendar()
+        ? this.#showMon()
         : view === "year"
-          ? this.#renderYearCalendar()
-          : this.#renderDaysCalendar();
-    if (this.#wrap.parentNode !== this.shadowRoot) {
-      this.shadowRoot.append(this.#wrap);
+          ? this.#showYr()
+          : this.#showDays();
+    if (this.#grid.parentNode !== this.shadowRoot) {
+      this.shadowRoot.append(this.#grid);
     }
   }
 
-  #renderDaysCalendar() {
+  #showDays() {
     const pieces = [];
-    const startsWithMonday = this.#weekStartsOn === "mo";
-    const viewDate = new Date(this.#yearView, this.#monthsView - 1, 1);
+    const startsWithMonday = this.#wk === "mo";
+    const viewDate = new Date(this.#yr, this.#Mo - 1, 1);
 
     if (this.hasAttribute("with-weekdays")) {
       const weekdays = startsWithMonday
@@ -384,22 +510,28 @@ export class CaliCalendar extends HTMLElement {
     const mp = ("0" + (viewDate.getMonth() + 1)).slice(-2);
     const monthsDays = new Date(y, viewDate.getMonth() + 1, 0).getDate();
 
-    for (let dayNumber = 1; dayNumber <= monthsDays; dayNumber += 1) {
-      const date = `${yp}-${mp}-${("0" + dayNumber).slice(-2)}`;
+    const dateList = Array.from(
+      { length: monthsDays },
+      (_, i) => `${yp}-${mp}-${(`0${i + 1}`).slice(-2)}`
+    );
+    const active = this.#prime(dateList);
+
+    for (const date of dateList) {
       const isSelected = date === this.value;
       const isCurrent = date === currentDate;
-      const isDisabled = this.#isDisabled(date);
+      const isDisabled = this.#off(date);
       const parts = [
         "date-button",
         ...(isSelected ? ["selected-date-button"] : []),
         ...(isCurrent ? ["current-date-button"] : []),
         ...(isDisabled ? ["disabled-date-button"] : []),
       ].join(" ");
+      const tb = date === active && !isDisabled ? 0 : -1;
       pieces.push(
         butn(
           parts,
-          ` aria-pressed="${isSelected}" aria-disabled="${isDisabled}" data-a="s" data-d="${date}"${isDisabled ? " disabled" : ""}`,
-          dayNumber
+          ` tabindex="${tb}" aria-pressed="${isSelected}" aria-disabled="${isDisabled}" data-a="s" data-d="${date}"${isDisabled ? " disabled" : ""}`,
+          +date.slice(-2)
         )
       );
     }
@@ -407,37 +539,40 @@ export class CaliCalendar extends HTMLElement {
     return pieces.join("");
   }
 
-  #renderMonthsCalendar() {
-    return Array.from({ length: 12 }, (_, index) => {
-        const monthIndex = index + 1;
-        const isSelected = monthIndex === this.#monthsView;
-        const parts = [
-          "months-button",
-          ...(isSelected ? ["selected-months-button"] : []),
-        ].join(" ");
-        return butn(
-          parts,
-          ` aria-pressed="${isSelected}" data-a="m" data-m="${monthIndex}"`,
-          monthLabel(new Date(this.#yearView, index, 1))
-        );
-      }).join("");
+  // One list renderer for the months (12) and year (10) panels.
+  #renderList(count, selected, part, key, getVal, label) {
+    return Array.from({ length: count }, (_, i) => {
+      const v = getVal(i);
+      const on = v === selected;
+      return butn(
+        `${part}${on ? ` selected-${part}` : ""}`,
+        ` tabindex="${on ? 0 : -1}" aria-pressed="${on}" data-a="${key}" data-${key}="${v}"`,
+        label(v)
+      );
+    }).join("");
   }
 
-  #renderYearCalendar() {
-    this.#yearListStart ??= this.#yearView - 5;
-    return Array.from({ length: 10 }, (_, offset) => {
-        const year = this.#yearListStart + offset;
-        const isSelected = year === this.#yearView;
-        const parts = [
-          "year-button",
-          ...(isSelected ? ["selected-year-button"] : []),
-        ].join(" ");
-        return butn(
-          parts,
-          ` aria-pressed="${isSelected}" data-a="y" data-y="${year}"`,
-          year
-        );
-      }).join("");
+  #showMon() {
+    return this.#renderList(
+      12,
+      this.#Mo,
+      "months-button",
+      "m",
+      (i) => i + 1,
+      (v) => monthLabel(new Date(this.#yr, v - 1, 1))
+    );
+  }
+
+  #showYr() {
+    this.#y0 ??= this.#yr - 5;
+    return this.#renderList(
+      10,
+      this.#yr,
+      "year-button",
+      "y",
+      (i) => this.#y0 + i,
+      (v) => v
+    );
   }
 }
 

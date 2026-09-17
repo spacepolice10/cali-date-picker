@@ -1,8 +1,24 @@
 import { describe, it, expect, afterEach } from "vitest";
 import "./calendar.js";
 
+const validitySeen = new WeakMap();
 if (!Element.prototype.attachInternals) {
-  Element.prototype.attachInternals = () => ({ setFormValue() {} });
+  Element.prototype.attachInternals = function () {
+    const state = { value: "", flags: {} };
+    validitySeen.set(this, state);
+    return {
+      setFormValue(v) {
+        state.value = v;
+      },
+      setValidity(f) {
+        state.flags = f ?? {};
+      },
+    };
+  };
+}
+
+function validity(el) {
+  return validitySeen.get(el)?.flags ?? {};
 }
 
 function mount(attrs = {}, parent = document.body) {
@@ -349,6 +365,26 @@ describe("demo: form value", () => {
     el.formResetCallback();
     expect(el.getAttribute("value")).toBe("");
   });
+
+  it("flags valueMissing when required and empty", () => {
+    const el = mount({ required: true });
+    expect(validity(el).valueMissing).toBe(true);
+    el.value = "2026-09-13";
+    expect(validity(el)).toEqual({});
+  });
+
+  it("flags range underflow/overflow outside minval/maxval", () => {
+    const el = mount({
+      value: "2026-09-13",
+      minval: "2026-09-10",
+      maxval: "2026-09-20",
+    });
+    expect(validity(el)).toEqual({});
+    el.value = "2026-09-05";
+    expect(validity(el).rangeUnderflow).toBe(true);
+    el.value = "2026-09-25";
+    expect(validity(el).rangeOverflow).toBe(true);
+  });
 });
 
 // #events — change reports date; beforechange can veto (reject Sundays).
@@ -453,6 +489,181 @@ describe("demo: popover / dialog wiring", () => {
     });
     clickBtn(el, '[data-d="2025-12-05"]');
     expect(el.getAttribute("value")).toBe("2025-12-05");
+  });
+});
+
+// #keyboard — Tab / Shift+Tab leave the grid, arrows move inside.
+describe("keyboard: roving tabindex", () => {
+  function tabbables(el, selector) {
+    return [...el.shadowRoot.querySelectorAll(selector)].filter(
+      (b) => !b.disabled && b.tabIndex !== -1
+    );
+  }
+
+  it("days grid exposes a single tab stop", () => {
+    const el = mount({
+      value: "2026-09-13",
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    expect(tabbables(el, '[data-a="s"]')).toHaveLength(1);
+    expect(
+      el.shadowRoot.querySelector('[data-d="2026-09-13"]').tabIndex
+    ).toBe(0);
+  });
+
+  it("arrow keys move focus inside the days grid", () => {
+    const el = mount({
+      value: "2026-09-13",
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    const start = el.shadowRoot.querySelector('[data-d="2026-09-13"]');
+    start.focus();
+    start.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })
+    );
+    expect(el.shadowRoot.activeElement?.dataset?.d).toBe("2026-09-14");
+    expect(tabbables(el, '[data-a="s"]')).toHaveLength(1);
+  });
+
+  it("Tab is not trapped inside the grid", () => {
+    const el = mount({
+      value: "2026-09-13",
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    const start = el.shadowRoot.querySelector('[data-d="2026-09-13"]');
+    start.focus();
+    const tab = new KeyboardEvent("keydown", {
+      key: "Tab",
+      bubbles: true,
+      cancelable: true,
+    });
+    start.dispatchEvent(tab);
+    expect(tab.defaultPrevented).toBe(false);
+  });
+
+  it("keeps keyboard focus on the date after selecting it", () => {
+    const el = mount({
+      value: "2026-09-13",
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    const next = el.shadowRoot.querySelector('[data-d="2026-09-14"]');
+    next.focus();
+    next.click();
+    expect(el.getAttribute("value")).toBe("2026-09-14");
+    expect(el.shadowRoot.activeElement?.dataset?.d).toBe("2026-09-14");
+  });
+
+  it("month view focuses the selected month on open", () => {
+    const el = mount({
+      "months-view": "12",
+      "year-view": "2025",
+      "with-switcher": true,
+    });
+    const viewBtn = el.shadowRoot.querySelector('[data-v="months"]');
+    viewBtn.focus();
+    viewBtn.click();
+    expect(el.dataset.view).toBe("months");
+    expect(el.shadowRoot.activeElement?.dataset?.m).toBe("12");
+  });
+
+  it("arrow keys move focus inside the months grid", () => {
+    const el = mount({
+      "months-view": "12",
+      "year-view": "2025",
+      "with-switcher": true,
+    });
+    clickBtn(el, '[data-a="v"][data-v="months"]');
+    const june = el.shadowRoot.querySelector('[data-m="6"]');
+    june.focus();
+    june.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })
+    );
+    expect(el.shadowRoot.activeElement?.dataset?.m).toBe("7");
+  });
+
+  it("year view focuses the selected year and arrows move inside", () => {
+    const el = mount({
+      "months-view": "12",
+      "year-view": "2025",
+      "with-switcher": true,
+    });
+    const viewBtn = el.shadowRoot.querySelector('[data-v="year"]');
+    viewBtn.focus();
+    viewBtn.click();
+    expect(el.dataset.view).toBe("year");
+    expect(el.shadowRoot.activeElement?.dataset?.y).toBe("2025");
+    el.shadowRoot.activeElement.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })
+    );
+    expect(el.shadowRoot.activeElement?.dataset?.y).toBe("2026");
+  });
+
+  it("Home/End jump to the edges of the visible range", () => {
+    const el = mount({
+      value: "2026-09-14",
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    const mid = el.shadowRoot.querySelector('[data-d="2026-09-14"]');
+    mid.focus();
+    mid.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+    expect(el.shadowRoot.activeElement?.dataset?.d).toBe("2026-09-01");
+    el.shadowRoot.activeElement.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "End", bubbles: true })
+    );
+    expect(el.shadowRoot.activeElement?.dataset?.d).toBe("2026-09-30");
+    expect([el.yearView, el.monthsView]).toEqual([2026, 9]);
+  });
+
+  it("arrow keys do not leave the visible month", () => {
+    const el = mount({
+      value: "2026-09-30",
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    const last = el.shadowRoot.querySelector('[data-d="2026-09-30"]');
+    last.focus();
+    last.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })
+    );
+    expect(el.shadowRoot.activeElement?.dataset?.d).toBe("2026-09-30");
+    expect([el.yearView, el.monthsView]).toEqual([2026, 9]);
+
+    const first = el.shadowRoot.querySelector('[data-d="2026-09-01"]');
+    first.focus();
+    first.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true })
+    );
+    expect(el.shadowRoot.activeElement?.dataset?.d).toBe("2026-09-01");
+    expect([el.yearView, el.monthsView]).toEqual([2026, 9]);
+  });
+
+  it("arrow keys do not leave the visible months and years", () => {
+    const el = mount({
+      "months-view": "12",
+      "year-view": "2025",
+      "with-switcher": true,
+    });
+    clickBtn(el, '[data-a="v"][data-v="months"]');
+    const dec = el.shadowRoot.querySelector('[data-m="12"]');
+    dec.focus();
+    dec.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })
+    );
+    expect(el.shadowRoot.activeElement?.dataset?.m).toBe("12");
+    expect(el.yearView).toBe(2025);
+
+    clickBtn(el, '[data-a="v"][data-v="year"]');
+    const lastYear = el.shadowRoot.querySelector('[data-y="2029"]');
+    lastYear.focus();
+    lastYear.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })
+    );
+    expect(el.shadowRoot.activeElement?.dataset?.y).toBe("2029");
   });
 });
 

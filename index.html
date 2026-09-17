@@ -102,35 +102,18 @@
       }
 
       @media (max-width: 899px) {
-        html,
-        body {
-          height: 100%;
-        }
-
         body {
           max-width: none;
-          margin: 0;
           padding: 0;
-          height: 100vh;
-          height: 100dvh;
-          overflow: hidden;
+          overflow-x: clip;
         }
 
-        /* Examples first: content is the scroll view.
-           The dots rail opens the section list as a dialog. */
+        /* Natural document scroll — no fixed-height scroll views. */
         .page {
           display: block;
-          height: 100vh;
-          height: 100dvh;
         }
 
         .content {
-          height: 100vh;
-          height: 100dvh;
-          overflow-y: auto;
-          overflow-x: hidden;
-          box-sizing: border-box;
-          overscroll-behavior-y: contain;
           padding: var(--space-h) calc(var(--space-h) * 2) calc(var(--space-h) * 4)
             calc(var(--space-h) * 2 + 22px);
         }
@@ -191,7 +174,8 @@
         }
 
         /* Section list as a left-side sheet. Native dialog:
-           Escape and backdrop come free. */
+           Escape and backdrop come free. Slides in from the left,
+           with no backdrop dimming. */
         #nav-dialog {
           position: fixed;
           inset-block: 0;
@@ -210,10 +194,29 @@
           max-height: none;
           box-sizing: border-box;
           overflow-y: auto;
+          transform: translateX(-105%);
+          transition:
+            transform 0.25s ease,
+            overlay 0.25s allow-discrete,
+            display 0.25s allow-discrete;
+
+          @media (prefers-reduced-motion: reduce) {
+            transition: none;
+          }
+        }
+
+        #nav-dialog[open] {
+          transform: none;
+        }
+
+        @starting-style {
+          #nav-dialog[open] {
+            transform: translateX(-105%);
+          }
         }
 
         #nav-dialog::backdrop {
-          background: color-mix(in srgb, var(--primary-color) 50%, transparent);
+          background: transparent;
         }
 
         #nav-dialog nav ul {
@@ -234,6 +237,30 @@
           white-space: normal;
           font-size: 1.1rem;
           padding-block: 6px;
+          opacity: 0.55;
+          transition: opacity 0.2s ease;
+        }
+
+        #nav-dialog nav a::before {
+          content: "";
+          flex: none;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: currentColor;
+          opacity: 0;
+          transform: scale(0.6);
+          transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        #nav-dialog nav a.is-active {
+          opacity: 1;
+        }
+
+        #nav-dialog nav a.is-active::before {
+          opacity: 1;
+          transform: scale(1);
+          background: var(--accent-color);
         }
 
         main > section {
@@ -416,8 +443,8 @@
       }
 
       cali-calendar::part(period-switcher) {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: var(--space-v);
         margin-block-end: var(--space-h);
       }
@@ -425,7 +452,7 @@
       cali-calendar::part(calendar) {
         display: grid;
         gap: var(--space-v);
-        grid-template-columns: repeat(7, 2em);
+        grid-template-columns: repeat(7, 1.75em);
         justify-content: start;
       }
 
@@ -443,8 +470,8 @@
       }
 
       cali-calendar::part(weekday) {
-        width: 2em;
-        height: 2em;
+        width: 1.75em;
+        height: 1.75em;
         display: grid;
         place-items: center;
         white-space: nowrap;
@@ -452,8 +479,8 @@
       }
 
       cali-calendar::part(offset) {
-        width: 2em;
-        height: 2em;
+        width: 1.75em;
+        height: 1.75em;
       }
 
       cali-calendar::part(previous),
@@ -471,12 +498,33 @@
       }
 
       cali-calendar::part(date-button) {
-        width: 2em;
-        height: 2em;
+        width: 1.75em;
+        height: 1.75em;
         aspect-ratio: 1;
         padding: 0;
         display: grid;
         place-items: center;
+      }
+
+      /* Switcher buttons share one fixed width: equal grid tracks sized
+         to fit the longest month name ("September"). */
+      cali-calendar::part(previous),
+      cali-calendar::part(next),
+      cali-calendar::part(view-months),
+      cali-calendar::part(view-year) {
+        min-width: 0;
+        box-sizing: border-box;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Floor the month button to the longest month name (monospace, so
+         exactly 9ch plus padding). Without this, fit-content sizing makes
+         the whole calendar narrower in "May" than in "September". */
+      cali-calendar::part(view-months) {
+        min-width: calc(9ch + 2 * var(--space-v));
       }
 
       cali-calendar::part(current-date-button) {
@@ -1120,7 +1168,6 @@ calendar.addEventListener("change", (event) => {
     </script>
     <script type="module">
       const sidebar = document.querySelector(".sidebar");
-      const content = document.querySelector(".content");
       const nav = document.querySelector(".sidebar nav");
       const rail = document.getElementById("pager-dots");
       const dotsList = document.getElementById("dots-list");
@@ -1140,6 +1187,7 @@ calendar.addEventListener("change", (event) => {
       [...dialogList.querySelectorAll("a")].forEach((a) => {
         if (!sectionIds.has(a.hash)) a.closest("li")?.remove();
       });
+      const dialogLinks = [...dialogList.querySelectorAll("a")];
 
       const dots = sections.map((section) => {
         const dot = document.createElement("span");
@@ -1166,7 +1214,7 @@ calendar.addEventListener("change", (event) => {
       };
 
       const setActive = (id, scrollNav = true) => {
-        for (const link of links) {
+        for (const link of [...links, ...dialogLinks]) {
           const isActive = link.hash === `#${id}`;
           link.classList.toggle("is-active", isActive);
           if (isActive) {
@@ -1193,9 +1241,7 @@ calendar.addEventListener("change", (event) => {
               }
               setActive(current);
             },
-            isMobile()
-              ? { root: content, rootMargin: "-20% 0px -65% 0px" }
-              : { rootMargin: "-20% 0px -65% 0px" },
+            { rootMargin: "-20% 0px -65% 0px" },
           );
           sections.forEach((section) => observer.observe(section));
         };
@@ -1217,10 +1263,7 @@ calendar.addEventListener("change", (event) => {
         const section = document.querySelector(link.hash);
         if (!section) return;
         history.replaceState(null, "", link.hash);
-        content.scrollTop =
-          section.getBoundingClientRect().top -
-          content.getBoundingClientRect().top +
-          content.scrollTop;
+        section.scrollIntoView({ block: "start" });
       });
     </script>
   </body>
