@@ -12,7 +12,7 @@ element. One month at a time; attributes configure the grid, CSS parts +
 | `calendar.min.js` + `.map` | Committed build artifact (served via jsDelivr). Regenerate after every `calendar.js` change. |
 | `calendar.test.js` | Vitest suite (happy-dom). Mirrors the demo sections. |
 | `index.html` | Demo page AND the component's reference styling (all `::part` rules live here). |
-| `minify.js` | esbuild bundle script (`esm`, `es2022`, comments stripped). |
+| `minify.js` | Terser minify (`esm`, `es2022`, comments stripped). |
 | `vitest.config.js` | `environment: "happy-dom"`. |
 
 ## Commands
@@ -57,8 +57,8 @@ npm run minify  # rebuild calendar.min.js + map after touching calendar.js
 
 ## Naming conventions (follow them)
 
-Private `#names` ship **verbatim** in the bundle — esbuild cannot mangle
-them — so they are deliberately terse. Keep new code in this style:
+Private `#names` are mangled by Terser. Keep them terse in source
+anyway so `calendar.js` stays readable:
 
 - State: `#view`, `#Mo` (month 1–12), `#yr`, `#y0` (year-list window
   start), `#grid` (calendar container), `#navi` (switcher container),
@@ -109,7 +109,7 @@ leave the grid naturally. `#keys` returns early on `Tab` — never
   `calendar.test.js` blocks are labeled with the same `#ids` — keep them
   in sync when adding a demo.
 - Reference styles to preserve: fixed date cells (`1.75em`), equal-width
-  switcher grid, `view-months` floored to `9ch` so the component width
+  switcher grid, `::part(months)` floored to `9ch` so the component width
   never jumps between months, natural document scroll on mobile (no
   fixed-height scroll containers), `#nav-dialog` slide animation without
   backdrop dimming.
@@ -135,8 +135,9 @@ leave the grid naturally. `#keys` returns early on `Tab` — never
 
 `calendar.min.js` is the product (~7 KB / ~2.8 KB gzip). Rules:
 
-- Private `#names` are shipped bytes — keep them short (see conventions).
-- Comments/JSDoc are free (stripped by esbuild) — document freely.
+- Public `::part` / attribute / ARIA strings are shipped bytes — keep
+  new ones short.
+- Comments/JSDoc are free (stripped by Terser) — document freely.
 - Prefer one generic renderer/handler over per-view duplication
   (`#renderList`, index-based `#keys` are the precedents).
 - After any `calendar.js` change: `npm test`, then `npm run minify`,

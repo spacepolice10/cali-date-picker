@@ -1,6 +1,6 @@
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-function toDate(value) {
+function toDt(value) {
   if (!value) return;
   const [y, m, d] = value.split("-").map(Number);
   const date = new Date(y, m - 1, d);
@@ -13,7 +13,7 @@ function toDate(value) {
   return date;
 }
 
-function toDateString(date) {
+function toStrn(date) {
   return [
     String(date.getFullYear()).padStart(4, "0"),
     String(date.getMonth() + 101).slice(1),
@@ -23,12 +23,12 @@ function toDateString(date) {
 
 // Shared month formatter — allocated once, not per render.
 const mf = new Intl.DateTimeFormat("en-US", { month: "long" });
-function monthLabel(date) {
+function mfName(date) {
   return mf.format(date);
 }
 
-function butn(part, attrs, label) {
-  return `<button type="button" part="${part}"${attrs}>${label}</button>`;
+function butn(part, attr, name) {
+  return `<button type="button" part="${part}"${attr}>${name}</button>`;
 }
 
 /**
@@ -52,6 +52,20 @@ function butn(part, attrs, label) {
  * @attr {boolean} [required] Form validation: empty `value` fails with `valueMissing`.
  * @fires CustomEvent<{date: IsoDate}> beforechange Cancelable, dispatched before `value` changes.
  * @fires CustomEvent<{date: IsoDate}> change Dispatched after `value` changes.
+ * @csspart switcher Period prev/next + month/year toggles.
+ * @csspart prev Previous period.
+ * @csspart next Next period.
+ * @csspart months Month-view toggle. Also `selected` while open.
+ * @csspart years Year-view toggle. Also `selected` while open.
+ * @csspart calendar Day/month/year grid.
+ * @csspart weekday Weekday label.
+ * @csspart offset Leading empty cell.
+ * @csspart date Day button. May also be `current`, `selected`, `disabled`.
+ * @csspart mn-butn Month-grid button. May also be `selected`.
+ * @csspart yr-butn Year-grid button. May also be `selected`.
+ * @csspart selected Selected date, month, year, or open view toggle.
+ * @csspart current Today.
+ * @csspart disabled Out-of-range day.
  */
 export class CaliCalendar extends HTMLElement {
   static formAssociated = true;
@@ -150,14 +164,14 @@ export class CaliCalendar extends HTMLElement {
     }
   }
 
-  #prime(dateList) {
+  #prime(dateList, min, max) {
     const inMonth = (iso) =>
-      iso && dateList.includes(iso) && !this.#off(iso);
+      iso && dateList.includes(iso) && !this.#off(iso, min, max);
     if (inMonth(this.#fdate)) return this.#fdate;
     if (inMonth(this.value)) return this.value;
-    const today = toDateString(new Date());
+    const today = toStrn(new Date());
     if (inMonth(today)) return today;
-    return dateList.find((iso) => !this.#off(iso)) ?? dateList[0];
+    return dateList.find((iso) => !this.#off(iso, min, max)) ?? dateList[0];
   }
 
   constructor() {
@@ -187,10 +201,11 @@ export class CaliCalendar extends HTMLElement {
     if (this.isConnected) {
       // Upgrade path: attributes can change before connectedCallback
       // ran #ready, leaving #yr/#Mo undefined and
-      // monthLabel(new Date(undefined, NaN, 1)) throwing RangeError.
+      // mfName(new Date(undefined, NaN, 1)) throwing RangeError.
       this.#ready();
       this.#valid();
-      this.#show();
+      // required only affects validity, not the painted grid.
+      if (name !== "required") this.#show();
     }
   }
 
@@ -231,8 +246,8 @@ export class CaliCalendar extends HTMLElement {
     this.setAttribute("value", value);
   }
   #lim(name) {
-    const date = toDate(this.getAttribute(name));
-    return date ? toDateString(date) : "";
+    const date = toDt(this.getAttribute(name));
+    return date ? toStrn(date) : "";
   }
   #applyLimit(name, value) {
     if (value) this.setAttribute(name, value);
@@ -276,17 +291,11 @@ export class CaliCalendar extends HTMLElement {
   set maxval(value) {
     this.#applyLimit("maxval", value);
   }
-  get #wk() {
-    return this.getAttribute("week-starts-on") === "mo" ? "mo" : "su";
-  }
 
-  #off(iso) {
-    const min = this.minval;
-    const max = this.maxval;
-    return !!(
-      iso &&
-      ((min && iso < min) || (max && iso > max))
-    );
+  #off(iso, min, max) {
+    min ??= this.minval;
+    max ??= this.maxval;
+    return !!(iso && ((min && iso < min) || (max && iso > max)));
   }
 
   #fire(type, date, cancelable) {
@@ -360,7 +369,7 @@ export class CaliCalendar extends HTMLElement {
   #ready() {
     if (this.#yr && this.#Mo) return;
 
-    const fromValue = toDate(this.value);
+    const fromValue = toDt(this.value);
     if (fromValue) {
       this.#yr = fromValue.getFullYear();
       this.#Mo = fromValue.getMonth() + 1;
@@ -374,10 +383,10 @@ export class CaliCalendar extends HTMLElement {
       +this.getAttribute("months-view") || currentDate.getMonth() + 1;
   }
 
-  #applyValue(raw) {
-    const date = toDate(raw);
+  #applyValue(rw) {
+    const date = toDt(rw);
     if (!date) {
-      if (raw) {
+      if (rw) {
         this.setAttribute("value", "");
         return;
       }
@@ -385,8 +394,8 @@ export class CaliCalendar extends HTMLElement {
       return;
     }
 
-    const normalized = toDateString(date);
-    if (raw !== normalized) {
+    const normalized = toStrn(date);
+    if (rw !== normalized) {
       this.setAttribute("value", normalized);
       return;
     }
@@ -434,7 +443,7 @@ export class CaliCalendar extends HTMLElement {
 
     if (!this.#navi) {
       this.#navi = document.createElement("div");
-      this.#navi.part = "period-switcher";
+      this.#navi.part = "switcher";
       this.shadowRoot.prepend(this.#navi);
     }
 
@@ -443,17 +452,17 @@ export class CaliCalendar extends HTMLElement {
     const yearOpen = this.#view === "year";
     this.#navi.innerHTML =
       butn(
-        "previous",
+        "prev",
         ` data-a="p" data-p="-1" aria-label="Previous period"`,
         "Prev"
       ) +
       butn(
-        `view-months${monthsOpen ? " selected-view" : ""}`,
+        `months${monthsOpen ? " selected" : ""}`,
         ` data-a="v" data-v="months" aria-pressed="${monthsOpen}"`,
-        monthLabel(viewDate)
+        mfName(viewDate)
       ) +
       butn(
-        `view-year${yearOpen ? " selected-view" : ""}`,
+        `years${yearOpen ? " selected" : ""}`,
         ` data-a="v" data-v="year" aria-pressed="${yearOpen}"`,
         this.#yr
       ) +
@@ -472,7 +481,7 @@ export class CaliCalendar extends HTMLElement {
     const view = this.#view;
     this.#grid.innerHTML =
       view === "months"
-        ? this.#showMon()
+        ? this.#showMo()
         : view === "year"
           ? this.#showYr()
           : this.#showDays();
@@ -483,27 +492,26 @@ export class CaliCalendar extends HTMLElement {
 
   #showDays() {
     const pieces = [];
-    const startsWithMonday = this.#wk === "mo";
+    const mo = this.getAttribute("week-starts-on") === "mo";
     const viewDate = new Date(this.#yr, this.#Mo - 1, 1);
 
     if (this.hasAttribute("with-weekdays")) {
-      const weekdays = startsWithMonday
-        ? [...WEEKDAYS.slice(1), WEEKDAYS[0]]
-        : WEEKDAYS;
-      for (const weekdayName of weekdays) {
-        pieces.push(`<span part="weekday">${weekdayName}</span>`);
+      for (let i = 0; i < 7; i++) {
+        pieces.push(`<span part="weekday">${WEEKDAYS[(i + mo) % 7]}</span>`);
       }
     }
 
     if (this.hasAttribute("with-offset")) {
-      const offsetNumber =
-        (viewDate.getDay() - (startsWithMonday ? 1 : 0) + 7) % 7;
-      for (let index = 0; index < offsetNumber; index += 1) {
-        pieces.push('<span part="offset" aria-hidden="true"></span>');
-      }
+      pieces.push(
+        '<span part="offset" aria-hidden="true"></span>'.repeat(
+          (viewDate.getDay() - mo + 7) % 7
+        )
+      );
     }
 
-    const currentDate = toDateString(new Date());
+    const currentDate = toStrn(new Date());
+    const min = this.minval;
+    const max = this.maxval;
     const y = viewDate.getFullYear();
     // Padded once: month is fixed for the whole grid, year too.
     const yp = String(y).padStart(4, "0");
@@ -514,23 +522,17 @@ export class CaliCalendar extends HTMLElement {
       { length: monthsDays },
       (_, i) => `${yp}-${mp}-${(`0${i + 1}`).slice(-2)}`
     );
-    const active = this.#prime(dateList);
+    const active = this.#prime(dateList, min, max);
 
     for (const date of dateList) {
       const isSelected = date === this.value;
       const isCurrent = date === currentDate;
-      const isDisabled = this.#off(date);
-      const parts = [
-        "date-button",
-        ...(isSelected ? ["selected-date-button"] : []),
-        ...(isCurrent ? ["current-date-button"] : []),
-        ...(isDisabled ? ["disabled-date-button"] : []),
-      ].join(" ");
+      const isDisabled = this.#off(date, min, max);
       const tb = date === active && !isDisabled ? 0 : -1;
       pieces.push(
         butn(
-          parts,
-          ` tabindex="${tb}" aria-pressed="${isSelected}" aria-disabled="${isDisabled}" data-a="s" data-d="${date}"${isDisabled ? " disabled" : ""}`,
+          `date${isSelected ? " selected" : ""}${isCurrent ? " current" : ""}${isDisabled ? " disabled" : ""}`,
+          ` tabindex="${tb}" aria-pressed="${isSelected}" data-a="s" data-d="${date}"${isDisabled ? " disabled" : ""}`,
           +date.slice(-2)
         )
       );
@@ -545,21 +547,21 @@ export class CaliCalendar extends HTMLElement {
       const v = getVal(i);
       const on = v === selected;
       return butn(
-        `${part}${on ? ` selected-${part}` : ""}`,
+        `${part}${on ? " selected" : ""}`,
         ` tabindex="${on ? 0 : -1}" aria-pressed="${on}" data-a="${key}" data-${key}="${v}"`,
         label(v)
       );
     }).join("");
   }
 
-  #showMon() {
+  #showMo() {
     return this.#renderList(
       12,
       this.#Mo,
-      "months-button",
+      "mn-butn",
       "m",
       (i) => i + 1,
-      (v) => monthLabel(new Date(this.#yr, v - 1, 1))
+      (v) => mfName(new Date(this.#yr, v - 1, 1))
     );
   }
 
@@ -568,7 +570,7 @@ export class CaliCalendar extends HTMLElement {
     return this.#renderList(
       10,
       this.#yr,
-      "year-button",
+      "yr-butn",
       "y",
       (i) => this.#y0 + i,
       (v) => v

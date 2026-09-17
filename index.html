@@ -442,7 +442,7 @@
         padding: var(--space-h);
       }
 
-      cali-calendar::part(period-switcher) {
+      cali-calendar::part(switcher) {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: var(--space-v);
@@ -483,13 +483,13 @@
         height: 1.75em;
       }
 
-      cali-calendar::part(previous),
+      cali-calendar::part(prev),
       cali-calendar::part(next),
-      cali-calendar::part(view-months),
-      cali-calendar::part(view-year),
-      cali-calendar::part(date-button),
-      cali-calendar::part(months-button),
-      cali-calendar::part(year-button) {
+      cali-calendar::part(months),
+      cali-calendar::part(years),
+      cali-calendar::part(date),
+      cali-calendar::part(mn-butn),
+      cali-calendar::part(yr-butn) {
         font: inherit;
         color: inherit;
         background: transparent;
@@ -497,7 +497,7 @@
         padding: var(--space-v);
       }
 
-      cali-calendar::part(date-button) {
+      cali-calendar::part(date) {
         width: 1.75em;
         height: 1.75em;
         aspect-ratio: 1;
@@ -508,10 +508,10 @@
 
       /* Switcher buttons share one fixed width: equal grid tracks sized
          to fit the longest month name ("September"). */
-      cali-calendar::part(previous),
+      cali-calendar::part(prev),
       cali-calendar::part(next),
-      cali-calendar::part(view-months),
-      cali-calendar::part(view-year) {
+      cali-calendar::part(months),
+      cali-calendar::part(years) {
         min-width: 0;
         box-sizing: border-box;
         text-align: center;
@@ -523,22 +523,19 @@
       /* Floor the month button to the longest month name (monospace, so
          exactly 9ch plus padding). Without this, fit-content sizing makes
          the whole calendar narrower in "May" than in "September". */
-      cali-calendar::part(view-months) {
+      cali-calendar::part(months) {
         min-width: calc(9ch + 2 * var(--space-v));
       }
 
-      cali-calendar::part(current-date-button) {
+      cali-calendar::part(current) {
         border-color: var(--accent-color);
       }
 
-      cali-calendar::part(disabled-date-button) {
+      cali-calendar::part(disabled) {
         opacity: 0.35;
       }
 
-      cali-calendar::part(selected-view),
-      cali-calendar::part(selected-date-button),
-      cali-calendar::part(selected-months-button),
-      cali-calendar::part(selected-year-button) {
+      cali-calendar::part(selected) {
         background: var(--accent-color);
         color: var(--secondary-color);
       }
@@ -590,15 +587,15 @@
         </ul>
         <p>Elements and states:</p>
         <ul>
-          <li><code>::part(period-switcher)</code></li>
-          <li><code>::part(previous)</code> / <code>::part(next)</code></li>
-          <li><code>::part(view-months)</code> / <code>::part(view-year)</code> / <code>::part(selected-view)</code></li>
+          <li><code>::part(switcher)</code></li>
+          <li><code>::part(prev)</code> / <code>::part(next)</code></li>
+          <li><code>::part(months)</code> / <code>::part(years)</code></li>
           <li><code>::part(calendar)</code></li>
           <li><code>::part(weekday)</code></li>
           <li><code>::part(offset)</code></li>
-          <li><code>::part(date-button)</code> / <code>::part(current-date-button)</code> / <code>::part(selected-date-button)</code> / <code>::part(disabled-date-button)</code></li>
-          <li><code>::part(months-button)</code> / <code>::part(selected-months-button)</code></li>
-          <li><code>::part(year-button)</code> / <code>::part(selected-year-button)</code></li>
+          <li><code>::part(date)</code> / <code>::part(current)</code> / <code>::part(selected)</code> / <code>::part(disabled)</code></li>
+          <li><code>::part(mn-butn)</code></li>
+          <li><code>::part(yr-butn)</code></li>
         </ul>
         <h3 class="block-title">Code</h3>
         <pre><code class="hljs">cali-calendar[with-switcher]::part(calendar) {
@@ -610,14 +607,11 @@ cali-calendar[data-view="months"]::part(calendar) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-cali-calendar::part(current-date-button) {
+cali-calendar::part(current) {
   border-color: var(--accent-color);
 }
 
-cali-calendar::part(selected-view),
-cali-calendar::part(selected-date-button),
-cali-calendar::part(selected-months-button),
-cali-calendar::part(selected-year-button) {
+cali-calendar::part(selected) {
   background: var(--accent-color);
   color: var(--secondary-color);
 }</code></pre>
@@ -636,19 +630,19 @@ cali-calendar::part(selected-year-button) {
           <tbody>
             <tr>
               <td><code>value="YYYY-MM-DD"</code></td>
-              <td>Selected date. Paints <code>selected-date-button</code>, sets the form value, opens the calendar on that month. Empty clears the selection.</td>
+              <td>Selected date. Paints <code>selected</code>, sets the form value, opens the calendar on that month. Empty clears the selection.</td>
             </tr>
             <tr>
               <td><code>minval="YYYY-MM-DD"</code></td>
-              <td>Earliest selectable date. Earlier day buttons render <code>disabled</code> with <code>disabled-date-button</code> and ignore clicks. Views stay navigable. Set once; not observed.</td>
+              <td>Earliest selectable date. Earlier day buttons render <code>disabled</code> and ignore clicks. Views stay navigable. Set once; not observed.</td>
             </tr>
             <tr>
               <td><code>maxval="YYYY-MM-DD"</code></td>
-              <td>Latest selectable date. Later day buttons render <code>disabled</code> with <code>disabled-date-button</code> and ignore clicks. Views stay navigable. Set once; not observed.</td>
+              <td>Latest selectable date. Later day buttons render <code>disabled</code> and ignore clicks. Views stay navigable. Set once; not observed.</td>
             </tr>
             <tr>
               <td><code>with-weekdays</code></td>
-              <td>Shows weekday labels (<code>Sun</code>–<code>Sat</code>) in the first row.</td>
+              <td>Shows weekday labels (<code>Su</code>–<code>Sa</code>) in the first row.</td>
             </tr>
             <tr>
               <td><code>with-offset</code></td>
@@ -729,7 +723,7 @@ cali-calendar::part(selected-year-button) {
         <h2>Period switcher</h2>
         <p>
           Prev / next move the period. Month and year buttons toggle
-          <code>data-view</code> and pick up <code>selected-view</code> while
+          <code>data-view</code> and pick up <code>selected</code> while
           that panel is open. A fixed <code>calendar</code> height keeps the
           page from jumping between views.
         </p>
@@ -750,8 +744,8 @@ cali-calendar::part(selected-year-button) {
       <section id="selected">
         <h2>Selected vs today</h2>
         <p>
-          <code>value</code> paints <code>selected-date-button</code>. Today keeps
-          <code>current-date-button</code> even when it is not selected.
+          <code>value</code> paints <code>selected</code>. Today keeps
+          <code>current</code> even when it is not selected.
         </p>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar

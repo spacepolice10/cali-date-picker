@@ -69,14 +69,14 @@ describe("demo: bare month", () => {
     expect(
       el.shadowRoot.querySelectorAll('[part="offset"]')
     ).toHaveLength(0);
-    expect(el.shadowRoot.querySelector('[part="period-switcher"]')).toBeNull();
+    expect(el.shadowRoot.querySelector('[part="switcher"]')).toBeNull();
     expect(el.shadowRoot.querySelector('[part="confirmation"]')).toBeNull();
   });
 });
 
 // #weekdays — Labels in the first row.
 describe("demo: weekdays", () => {
-  it("shows Sun-Sat labels in order", () => {
+  it("shows Su-Sa labels in order", () => {
     const el = mount({
       "months-view": "12",
       "year-view": "2025",
@@ -85,7 +85,7 @@ describe("demo: weekdays", () => {
     const labels = [
       ...el.shadowRoot.querySelectorAll('[part="weekday"]'),
     ].map((n) => n.textContent);
-    expect(labels).toEqual(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
+    expect(labels).toEqual(["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]);
     // Without offset, the 1st still starts in column one.
     expect(
       el.shadowRoot.querySelectorAll('[part="offset"]')
@@ -130,8 +130,8 @@ describe("demo: monday first", () => {
     const moLabels = [
       ...mo.shadowRoot.querySelectorAll('[part="weekday"]'),
     ].map((n) => n.textContent);
-    expect(moLabels[0]).toBe("Mon");
-    expect(moLabels[6]).toBe("Sun");
+    expect(moLabels[0]).toBe("Mo");
+    expect(moLabels[6]).toBe("Su");
     // Sep 1 2026 Tuesday: Sunday-start offset 2, Monday-start offset 1.
     expect(
       su.shadowRoot.querySelectorAll('[part="offset"]')
@@ -151,13 +151,13 @@ describe("demo: monday first", () => {
     const labels = [
       ...el.shadowRoot.querySelectorAll('[part="weekday"]'),
     ].map((n) => n.textContent);
-    expect(labels[0]).toBe("Sun");
+    expect(labels[0]).toBe("Su");
   });
 });
 
 // #switcher — Prev/next + month/year view toggling.
 describe("demo: period switcher", () => {
-  it("renders switcher and toggles data-view with selected-view", () => {
+  it("renders switcher and toggles data-view with selected", () => {
     const el = mount({
       "months-view": "12",
       "year-view": "2025",
@@ -169,7 +169,7 @@ describe("demo: period switcher", () => {
     clickBtn(el, '[data-a="v"][data-v="months"]');
     expect(el.dataset.view).toBe("months");
     const viewBtn = el.shadowRoot.querySelector('[data-v="months"]');
-    expect(viewBtn.getAttribute("part")).toContain("selected-view");
+    expect(viewBtn.getAttribute("part")).toContain("selected");
     // Toggling the open panel returns to days.
     viewBtn.click();
     expect(el.dataset.view).toBe("days");
@@ -271,8 +271,8 @@ describe("demo: selected vs today", () => {
     expect(el.monthsView).toBe(m);
     expect(el.yearView).toBe(y);
     const selected = el.shadowRoot.querySelector(`[data-d="${today}"]`);
-    expect(selected.getAttribute("part")).toContain("selected-date-button");
-    expect(selected.getAttribute("part")).toContain("current-date-button");
+    expect(selected.getAttribute("part")).toContain("selected");
+    expect(selected.getAttribute("part")).toContain("current");
   });
 
   it("keeps current marker when another date is selected", () => {
@@ -288,10 +288,10 @@ describe("demo: selected vs today", () => {
     });
     expect(
       el.shadowRoot.querySelector(`[data-d="${other}"]`).getAttribute("part")
-    ).toContain("selected-date-button");
+    ).toContain("selected");
     expect(
       el.shadowRoot.querySelector(`[data-d="${today}"]`).getAttribute("part")
-    ).toContain("current-date-button");
+    ).toContain("current");
   });
 });
 
@@ -312,7 +312,7 @@ describe("demo: range", () => {
     const late = el.shadowRoot.querySelector('[data-d="2026-09-21"]');
     expect(early.disabled).toBe(true);
     expect(late.disabled).toBe(true);
-    expect(early.getAttribute("part")).toContain("disabled-date-button");
+    expect(early.getAttribute("part")).toContain("disabled");
     early.click();
     expect(el.getAttribute("value")).toBe("2026-09-13");
     // Views stay navigable despite the range.
@@ -371,6 +371,17 @@ describe("demo: form value", () => {
     expect(validity(el).valueMissing).toBe(true);
     el.value = "2026-09-13";
     expect(validity(el)).toEqual({});
+  });
+
+  it("toggling required updates validity without rebuilding the grid", () => {
+    const el = mount({ "months-view": "9", "year-view": "2026" });
+    const first = days(el)[0];
+    el.setAttribute("required", "");
+    expect(validity(el).valueMissing).toBe(true);
+    expect(days(el)[0]).toBe(first);
+    el.removeAttribute("required");
+    expect(validity(el)).toEqual({});
+    expect(days(el)[0]).toBe(first);
   });
 
   it("flags range underflow/overflow outside minval/maxval", () => {
