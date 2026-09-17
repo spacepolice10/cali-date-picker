@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cali Calendar</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@19.3.0",
+          "react-dom/client": "https://esm.sh/react-dom@19.3.0/client"
+        }
+      }
+    </script>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/github.min.css"
@@ -450,15 +458,34 @@
       }
 
       cali-calendar::part(calendar) {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-h);
+        justify-content: start;
+      }
+
+      cali-calendar::part(pane) {
         display: grid;
         gap: var(--space-v);
         grid-template-columns: repeat(7, 1.75em);
         justify-content: start;
       }
 
+      cali-calendar::part(caption) {
+        grid-column: 1 / -1;
+        font: inherit;
+        font-weight: 600;
+        margin: 0;
+      }
+
       cali-calendar[with-switcher]::part(calendar) {
-        height: 16em;
+        min-height: 16em;
         align-content: start;
+      }
+
+      cali-calendar[data-view="months"]::part(calendar),
+      cali-calendar[data-view="year"]::part(calendar) {
+        display: grid;
       }
 
       cali-calendar[data-view="months"]::part(calendar) {
@@ -539,6 +566,14 @@
         background: var(--accent-color);
         color: var(--secondary-color);
       }
+
+      cali-calendar::part(in-ranges) {
+        background: color-mix(in srgb, var(--accent-color) 22%, transparent);
+      }
+
+      cali-calendar::part(preselected) {
+        border-color: var(--accent-color);
+      }
     </style>
   </head>
   <body>
@@ -555,11 +590,14 @@
             <li><a href="#switcher">Period switcher</a></li>
             <li><a href="#selected">Selected vs today</a></li>
             <li><a href="#range">Range</a></li>
+            <li><a href="#months">Months</a></li>
+            <li><a href="#ranger">Ranger</a></li>
             <li><a href="#open">Open on a month</a></li>
             <li><a href="#form">Form value</a></li>
             <li><a href="#events">change / beforechange</a></li>
             <li><a href="#binding">Bind an input</a></li>
             <li><a href="#js">yearView / monthsView from JS</a></li>
+            <li><a href="#react">React</a></li>
             <li><a href="#popover">Popover</a></li>
             <li><a href="#dialog">Dialog</a></li>
             <li><a href="#cdn">jsDelivr</a></li>
@@ -571,7 +609,7 @@
         <header>
           <h1>Cali Calendar</h1>
           <p>
-            One month at a time. Attributes configure the grid; CSS parts and
+            One or more months. Attributes configure the grid; CSS parts and
             <code>data-view</code> style the rest.
           </p>
         </header>
@@ -591,24 +629,26 @@
           <li><code>::part(prev)</code> / <code>::part(next)</code></li>
           <li><code>::part(months)</code> / <code>::part(years)</code></li>
           <li><code>::part(calendar)</code></li>
+          <li><code>::part(pane)</code> / <code>::part(caption)</code></li>
           <li><code>::part(weekday)</code></li>
           <li><code>::part(offset)</code></li>
-          <li><code>::part(date)</code> / <code>::part(current)</code> / <code>::part(selected)</code> / <code>::part(disabled)</code></li>
+          <li><code>::part(date)</code> / <code>::part(current)</code> / <code>::part(selected)</code> / <code>::part(disabled)</code> / <code>::part(in-ranges)</code> / <code>::part(preselected)</code></li>
           <li><code>::part(mn-butn)</code></li>
           <li><code>::part(yr-butn)</code></li>
         </ul>
         <h3 class="block-title">Code</h3>
         <pre><code class="hljs">cali-calendar[with-switcher]::part(calendar) {
-  height: 16em;
+  min-height: 16em;
   align-content: start;
 }
 
-cali-calendar[data-view="months"]::part(calendar) {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+cali-calendar::part(pane) {
+  display: grid;
+  grid-template-columns: repeat(7, 1.75em);
 }
 
-cali-calendar::part(current) {
-  border-color: var(--accent-color);
+cali-calendar::part(in-ranges) {
+  background: color-mix(in srgb, var(--accent-color) 22%, transparent);
 }
 
 cali-calendar::part(selected) {
@@ -630,7 +670,7 @@ cali-calendar::part(selected) {
           <tbody>
             <tr>
               <td><code>value="YYYY-MM-DD"</code></td>
-              <td>Selected date. Paints <code>selected</code>, sets the form value, opens the calendar on that month. Empty clears the selection.</td>
+              <td>Selected date <code>YYYY-MM-DD</code>, or <code>YYYY-MM-DD/YYYY-MM-DD</code> with <code>with-range</code>. Paints <code>selected</code>, sets the form value, opens on the start month. Empty clears the selection.</td>
             </tr>
             <tr>
               <td><code>minval="YYYY-MM-DD"</code></td>
@@ -655,6 +695,14 @@ cali-calendar::part(selected) {
             <tr>
               <td><code>with-switcher</code></td>
               <td>Shows prev / next plus month and year buttons to switch <code>data-view</code> between days, months, and year panels.</td>
+            </tr>
+            <tr>
+              <td><code>months="3"</code></td>
+              <td>How many month panes to show (1–12). Default 1. Distinct from <code>months-view</code>.</td>
+            </tr>
+            <tr>
+              <td><code>with-range</code></td>
+              <td>Pick two dates. First click is <code>starts</code>; hover paints <code>in-ranges</code>; second click saves <code>starts/ends</code>. The next click starts over. <code>change</code> detail includes <code>date</code>, <code>starts</code>, and <code>ends</code>.</td>
             </tr>
             <tr>
               <td><code>year-view="2025"</code></td>
@@ -790,6 +838,69 @@ cali-calendar::part(selected) {
           with-offset
           with-switcher
         ></cali-calendar>
+      </section>
+
+      <section id="months">
+        <h2>Months</h2>
+        <p>
+          <code>months</code> paints that many sibling <code>pane</code>s.
+          Host CSS wraps them. Prev / next move by the same count.
+        </p>
+        <h3 class="block-title">Code</h3>
+        <pre><code class="language-html">&lt;cali-calendar
+  months="3"
+  months-view="9"
+  year-view="2026"
+  with-weekdays
+  with-offset
+  with-switcher
+&gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
+        <cali-calendar
+          months="3"
+          months-view="9"
+          year-view="2026"
+          with-weekdays
+          with-offset
+          with-switcher
+        ></cali-calendar>
+      </section>
+
+      <section id="ranger">
+        <h2>Ranger</h2>
+        <p>
+          <code>with-range</code> picks two dates. Hover (or focus) the second
+          date to preview <code>in-ranges</code>. The saved value is
+          <code>YYYY-MM-DD/YYYY-MM-DD</code>. Clicking again starts a new range.
+        </p>
+        <h3 class="block-title">Code — HTML</h3>
+        <pre><code class="language-html">&lt;cali-calendar
+  id="ranger-cal"
+  with-range
+  months="2"
+  months-view="9"
+  year-view="2026"
+  with-weekdays
+  with-offset
+  with-switcher
+&gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Code — JavaScript</h3>
+        <pre><code class="language-javascript">calendar.addEventListener("change", (event) => {
+  out.textContent = event.detail.date;
+});</code></pre>
+        <h3 class="block-title">Example</h3>
+        <cali-calendar
+          id="ranger-cal"
+          with-range
+          months="2"
+          months-view="9"
+          year-view="2026"
+          with-weekdays
+          with-offset
+          with-switcher
+        ></cali-calendar>
+        <h3 class="block-title">Preview</h3>
+        <output id="ranger-out" class="preview">Pick two dates.</output>
       </section>
 
       <section id="open">
@@ -941,6 +1052,60 @@ calendar.monthsView = 12;</code></pre>
         ></cali-calendar>
       </section>
 
+      <section id="react">
+        <h2>React</h2>
+        <p>
+          Load React from a CDN. <code>&lt;cali-calendar&gt;</code> is a custom
+          element, so keep <code>value</code> in React state and listen for
+          <code>change</code> on a ref — React does not wire custom events to
+          <code>onChange</code>.
+        </p>
+        <h3 class="block-title">Code — HTML</h3>
+        <pre><code class="language-html">&lt;script type="importmap"&gt;
+  {
+    "imports": {
+      "react": "https://esm.sh/react@19",
+      "react-dom/client": "https://esm.sh/react-dom@19/client"
+    }
+  }
+&lt;/script&gt;
+&lt;div id="react-root"&gt;&lt;/div&gt;</code></pre>
+        <h3 class="block-title">Code — JSX</h3>
+        <pre><code class="language-javascript">import { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+
+function Ranger() {
+  const ref = useRef(null);
+  const [value, setValue] = useState("");
+  useEffect(() => {
+    const el = ref.current;
+    const onChange = (event) => setValue(event.detail.date);
+    el.addEventListener("change", onChange);
+    return () => el.removeEventListener("change", onChange);
+  }, []);
+  return (
+    &lt;&gt;
+      &lt;cali-calendar
+        ref={ref}
+        value={value}
+        with-range=""
+        months="2"
+        months-view="9"
+        year-view="2026"
+        with-weekdays=""
+        with-offset=""
+        with-switcher=""
+      /&gt;
+      &lt;output&gt;{value || "Pick two dates."}&lt;/output&gt;
+    &lt;/&gt;
+  );
+}
+
+createRoot(document.getElementById("react-root")).render(&lt;Ranger /&gt;);</code></pre>
+        <h3 class="block-title">Example</h3>
+        <div id="react-root"></div>
+      </section>
+
       <section id="popover">
         <h2>Popover</h2>
         <p>
@@ -1060,6 +1225,12 @@ calendar.addEventListener("change", (event) => {
     <script type="module">
       import "./calendar.js";
 
+      const rangerCal = document.getElementById("ranger-cal");
+      const rangerOut = document.getElementById("ranger-out");
+      rangerCal.addEventListener("change", (event) => {
+        rangerOut.textContent = event.detail.date;
+      });
+
       const bookingForm = document.getElementById("booking-form");
       const bookingOut = document.getElementById("booking-out");
       bookingForm.addEventListener("submit", (event) => {
@@ -1147,6 +1318,39 @@ calendar.addEventListener("change", (event) => {
           if (event.target === dlg) dlg.close();
         });
       }
+    </script>
+    <script type="module">
+      import { createElement as h, useEffect, useRef, useState } from "react";
+      import { createRoot } from "react-dom/client";
+
+      const root = document.getElementById("react-root");
+      function Ranger() {
+        const ref = useRef(null);
+        const [value, setValue] = useState("");
+        useEffect(() => {
+          const el = ref.current;
+          const onChange = (event) => setValue(event.detail.date);
+          el.addEventListener("change", onChange);
+          return () => el.removeEventListener("change", onChange);
+        }, []);
+        return h(
+          "div",
+          null,
+          h("cali-calendar", {
+            ref,
+            value,
+            "with-range": "",
+            months: "2",
+            "months-view": "9",
+            "year-view": "2026",
+            "with-weekdays": "",
+            "with-offset": "",
+            "with-switcher": "",
+          }),
+          h("output", { className: "preview" }, value || "Pick two dates.")
+        );
+      }
+      createRoot(root).render(h(Ranger));
     </script>
     <script type="module">
       import hljs from "https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/es/core.min.js";

@@ -321,6 +321,147 @@ describe("demo: range", () => {
   });
 });
 
+// #months — N sibling month panes from one renderer.
+describe("demo: months count", () => {
+  it("paints one pane and no caption by default", () => {
+    const el = mount({
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    expect(el.shadowRoot.querySelectorAll('[part="pane"]')).toHaveLength(1);
+    expect(el.shadowRoot.querySelectorAll('[part="caption"]')).toHaveLength(0);
+    expect(days(el)).toHaveLength(30);
+  });
+
+  it("paints N panes with captions and clamps 1–12", () => {
+    const el = mount({
+      months: "3",
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    expect(el.shadowRoot.querySelectorAll('[part="pane"]')).toHaveLength(3);
+    const caps = [
+      ...el.shadowRoot.querySelectorAll('[part="caption"]'),
+    ].map((n) => n.textContent);
+    expect(caps).toEqual(["September", "October", "November"]);
+    expect(days(el)).toHaveLength(30 + 31 + 30);
+
+    el.setAttribute("months", "0");
+    expect(el.shadowRoot.querySelectorAll('[part="pane"]')).toHaveLength(1);
+    el.setAttribute("months", "13");
+    expect(el.shadowRoot.querySelectorAll('[part="pane"]')).toHaveLength(12);
+  });
+
+  it("steps the period by N months", () => {
+    const el = mount({
+      months: "3",
+      "months-view": "9",
+      "year-view": "2026",
+      "with-switcher": true,
+    });
+    clickBtn(el, '[data-a="p"][data-p="-1"]');
+    expect([el.yearView, el.monthsView]).toEqual([2026, 6]);
+    clickBtn(el, '[data-a="p"][data-p="1"]');
+    expect([el.yearView, el.monthsView]).toEqual([2026, 9]);
+  });
+
+  it("keeps the window when picking a date already on screen", () => {
+    const el = mount({
+      months: "2",
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    clickBtn(el, '[data-d="2026-10-05"]');
+    expect(el.value).toBe("2026-10-05");
+    expect([el.yearView, el.monthsView]).toEqual([2026, 9]);
+    el.value = "2026-12-01";
+    expect([el.yearView, el.monthsView]).toEqual([2026, 12]);
+  });
+});
+
+// #ranger — with-range picks two dates; hover paints in-ranges.
+describe("demo: ranger", () => {
+  function hover(el, iso) {
+    const btn = el.shadowRoot.querySelector(`[data-d="${iso}"]`);
+    expect(btn, iso).toBeTruthy();
+    btn.dispatchEvent(new PointerEvent("pointerover", { bubbles: true }));
+    return btn;
+  }
+
+  it("commits a sorted range and restarts on the next click", () => {
+    const el = mount({
+      "with-range": true,
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    const seen = [];
+    el.addEventListener("change", (e) =>
+      seen.push({
+        date: e.detail.date,
+        starts: e.detail.starts,
+        ends: e.detail.ends,
+      })
+    );
+    clickBtn(el, '[data-d="2026-09-10"]');
+    expect(el.value).toBe("2026-09-10");
+    expect(seen.at(-1)).toEqual({
+      date: "2026-09-10",
+      starts: "2026-09-10",
+      ends: "",
+    });
+    const mid = el.shadowRoot.querySelector('[data-d="2026-09-12"]');
+    hover(el, "2026-09-14");
+    expect(el.value).toBe("2026-09-10");
+    expect(
+      el.shadowRoot.querySelector('[data-d="2026-09-14"]').getAttribute("part")
+    ).toContain("preselected");
+    expect(mid.getAttribute("part")).toContain("in-ranges");
+    clickBtn(el, '[data-d="2026-09-14"]');
+    expect(el.value).toBe("2026-09-10/2026-09-14");
+    expect(seen.at(-1)).toEqual({
+      date: "2026-09-10/2026-09-14",
+      starts: "2026-09-10",
+      ends: "2026-09-14",
+    });
+    expect(
+      el.shadowRoot.querySelector('[data-d="2026-09-12"]').getAttribute("part")
+    ).toContain("in-ranges");
+    clickBtn(el, '[data-d="2026-09-20"]');
+    expect(el.value).toBe("2026-09-20");
+    expect(
+      el.shadowRoot.querySelector('[data-d="2026-09-12"]').getAttribute("part")
+    ).not.toContain("in-ranges");
+  });
+
+  it("swaps reversed clicks and allows a same-day range", () => {
+    const el = mount({
+      "with-range": true,
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    clickBtn(el, '[data-d="2026-09-20"]');
+    clickBtn(el, '[data-d="2026-09-10"]');
+    expect(el.value).toBe("2026-09-10/2026-09-20");
+    clickBtn(el, '[data-d="2026-09-13"]');
+    clickBtn(el, '[data-d="2026-09-13"]');
+    expect(el.value).toBe("2026-09-13/2026-09-13");
+  });
+
+  it("flags valueMissing until a complete range when required", () => {
+    const el = mount({
+      "with-range": true,
+      required: true,
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    expect(validity(el).valueMissing).toBe(true);
+    clickBtn(el, '[data-d="2026-09-10"]');
+    expect(validity(el).valueMissing).toBe(true);
+    clickBtn(el, '[data-d="2026-09-12"]');
+    expect(validity(el)).toEqual({});
+  });
+});
+
 // #open — year-view/months-view set initial view without value.
 describe("demo: open on a month", () => {
   it("opens on year-view/months-view", () => {
@@ -413,13 +554,15 @@ describe("demo: change / beforechange", () => {
       const date = new Date(`${event.detail.date}T00:00`);
       if (date.getDay() === 0) event.preventDefault();
     });
-    el.addEventListener("change", (e) => seen.push(e.detail.date));
+    el.addEventListener("change", (e) => seen.push(e.detail));
     // 2026-09-13 is a Sunday, 2026-09-14 a Monday.
     clickBtn(el, '[data-d="2026-09-13"]');
     expect(el.getAttribute("value") ?? "").not.toBe("2026-09-13");
     clickBtn(el, '[data-d="2026-09-14"]');
     expect(el.getAttribute("value")).toBe("2026-09-14");
-    expect(seen).toEqual(["2026-09-14"]);
+    expect(seen).toEqual([
+      { date: "2026-09-14", starts: "2026-09-14", ends: "2026-09-14" },
+    ]);
   });
 });
 
@@ -464,6 +607,28 @@ describe("demo: yearView / monthsView from JS", () => {
     expect(el.yearView).toBe(2025);
     expect(el.monthsView).toBe(12);
     expect(days(el)).toHaveLength(31);
+  });
+});
+
+// #react — Controlled value from outside; change reports what React should store.
+describe("demo: react", () => {
+  it("keeps value in sync with an outside listener", () => {
+    const el = mount({
+      "with-range": true,
+      "months-view": "9",
+      "year-view": "2026",
+    });
+    let value = "";
+    el.addEventListener("change", (event) => {
+      value = event.detail.date;
+      el.value = value;
+    });
+    clickBtn(el, '[data-d="2026-09-10"]');
+    expect(value).toBe("2026-09-10");
+    expect(el.value).toBe("2026-09-10");
+    clickBtn(el, '[data-d="2026-09-14"]');
+    expect(value).toBe("2026-09-10/2026-09-14");
+    expect(el.value).toBe("2026-09-10/2026-09-14");
   });
 });
 

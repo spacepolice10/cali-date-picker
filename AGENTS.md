@@ -1,7 +1,7 @@
 # AGENTS.md — cali-date-picker
 
 `<cali-calendar>`: a dependency-free, form-associated date picker custom
-element. One month at a time; attributes configure the grid, CSS parts +
+element. One or more months; attributes configure the grid, CSS parts +
 `data-view` style the rest.
 
 ## Files
@@ -27,10 +27,11 @@ npm run minify  # rebuild calendar.min.js + map after touching calendar.js
 
 - `CaliCalendar extends HTMLElement`, `formAssociated = true`,
   shadow DOM. Public surface: attributes + `.yearView` / `.monthsView`
-  properties + `value` + `beforechange` (cancelable) / `change` events.
-- **Observed attributes** (`observedAttributes`): only `value`,
+  properties + `value` + `beforechange` (cancelable) / `change` events
+  (`detail.date`, `detail.starts`, `detail.ends`).
+- **Observed attributes** (`observedAttributes`): `value`,
   `week-starts-on`, `with-offset`, `with-weekdays`, `with-switcher`,
-  `required`.
+  `with-range`, `months`, `required`.
   `minval` / `maxval` / `year-view` / `months-view` are **not** observed:
   read once as initial state; after connect drive the period via
   `.yearView` / `.monthsView`. Don't expect re-renders from setting them.
@@ -53,7 +54,9 @@ npm run minify  # rebuild calendar.min.js + map after touching calendar.js
 - **Views:** `#view` is `days` | `months` | `year`, mirrored to host
   `dataset.view` for styling. `#goto` switches views (and moves focus
   into the new grid); `#step` moves the period (Prev/Next); `#fromMon` /
-  `#fromYr` pick a month/year and return to days.
+  `#fromYr` pick a month/year and return to days. `#applyValue` opens on
+  the start month only when that month is not already on screen, so
+  clicking a later pane does not yank the window.
 
 ## Naming conventions (follow them)
 
@@ -62,17 +65,18 @@ anyway so `calendar.js` stays readable:
 
 - State: `#view`, `#Mo` (month 1–12), `#yr`, `#y0` (year-list window
   start), `#grid` (calendar container), `#navi` (switcher container),
-  `#fdate` (last focused ISO date).
-- Render: `#show`, `#showNav`, `#showGrid`, `#showDays`, `#showMon`,
-  `#showYr`, `#renderList` (shared months/year list renderer).
-- Events: `#push` (click), `#seen` (focusin), `#keys` (keydown).
+  `#fdate` (last focused ISO date), `#a` (range anchor), `#hov` (preview).
+- Render: `#show`, `#showNav`, `#showGrid`, `#showDays`, `#pane` (one
+  month), `#showMon`, `#showYr`, `#renderList`, `#paint` (range preview).
+- Events: `#push` (click), `#seen` (focusin), `#keys` (keydown),
+  `#over` / `#out` (range hover).
 - Logic: `#tabs` (roving tabindex), `#prime` (active-date priority),
   `#ready` (ensure period), `#choose` (commit date), `#step`, `#goto`,
   `#fromMon`, `#fromYr`, `#applyValue`, `#applyLimit`, `#lim`, `#off`
   (disabled check), `#wk` (week start), `#fire` (emit event).
 - Locals: `butn` (button element), `rw` (grid row width), `buttons`
-  (ordered button list). Helpers: `toDate`, `toDateString`, `monthLabel`
-  (shared `Intl` formatter `mf`), `butn(part, attrs, label)`.
+  (ordered button list). Helpers: `toDt`, `toStrn`, `pair` (slash
+  values), `mfName` (shared `Intl` formatter `mf`), `butn(part, attrs, label)`.
 - Public API names (`value`, `yearView`, `monthsView`, `minval`,
   `maxval`, lifecycle callbacks) must stay verbose — they are the
   documented contract. JSDoc on public API is kept (stripped from the
@@ -103,8 +107,9 @@ leave the grid naturally. `#keys` returns early on `Tab` — never
 ## Demo page (`index.html`)
 
 - One `<section>` per feature (`#bare`, `#weekdays`, `#offset`,
-  `#monday`, `#switcher`, `#selected`, `#range`, `#open`, `#form`,
-  `#events`, `#binding`, `#js`, `#popover`, `#dialog`, `#cdn`); sidebar
+  `#monday`, `#switcher`, `#selected`, `#range`, `#months`, `#ranger`,
+  `#open`, `#form`, `#events`, `#binding`, `#js`, `#react`, `#popover`,
+  `#dialog`, `#cdn`); sidebar
   nav + mobile dots rail + `#nav-dialog` slide-in panel mirror them.
   `calendar.test.js` blocks are labeled with the same `#ids` — keep them
   in sync when adding a demo.
