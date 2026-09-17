@@ -123,7 +123,7 @@ export class CaliCalendar extends HTMLElement {
         this.#choose(d.d);
         break;
       case "m":
-        this.#fromMon(+d.m);
+        this.#fromMo(+d.m);
         break;
       case "y":
         this.#fromYr(+d.y);
@@ -197,13 +197,13 @@ export class CaliCalendar extends HTMLElement {
   }
 
   #prime(dateList, min, max) {
-    const inMonth = (iso) =>
+    const inMo = (iso) =>
       iso && dateList.includes(iso) && !this.#off(iso, min, max);
-    if (inMonth(this.#fdate)) return this.#fdate;
-    const start = pair(this.value)[0];
-    if (inMonth(start)) return start;
-    const today = toStrn(new Date());
-    if (inMonth(today)) return today;
+    if (inMo(this.#fdate)) return this.#fdate;
+    const starts = pair(this.value)[0];
+    if (inMo(starts)) return starts;
+    const current = toStrn(new Date());
+    if (inMo(current)) return current;
     return dateList.find((iso) => !this.#off(iso, min, max)) ?? dateList[0];
   }
 
@@ -311,9 +311,9 @@ export class CaliCalendar extends HTMLElement {
         ? { valueMissing: true }
         : (s && this.#off(s, lo, hi)) || (e && this.#off(e, lo, hi))
           ? {
-              rangeUnderflow: !!(lo && ((s && s < lo) || (e && e < lo))),
-              rangeOverflow: !!(hi && ((s && s > hi) || (e && e > hi))),
-            }
+            rangeUnderflow: !!(lo && ((s && s < lo) || (e && e < lo))),
+            rangeOverflow: !!(hi && ((s && s > hi) || (e && e > hi))),
+          }
           : {}
     );
   }
@@ -419,16 +419,16 @@ export class CaliCalendar extends HTMLElement {
     }
   }
 
-  #fromMon(month) {
+  #fromMo(m) {
     this.#view = "days";
-    this.#Mo = month;
+    this.#Mo = m;
     this.#show();
   }
 
-  #fromYr(year) {
+  #fromYr(y) {
     this.#view = "days";
-    this.#yr = year;
-    this.#y0 = year - 5;
+    this.#yr = y;
+    this.#y0 = y - 5;
     this.#show();
   }
 
@@ -526,21 +526,21 @@ export class CaliCalendar extends HTMLElement {
     const prevActive = this.shadowRoot.activeElement;
     const prevA = prevActive?.dataset?.a;
     // A selector matching the same button, e.g. [data-a="s"][data-d="…"].
-    const prevSel = prevActive?.dataset
+    const prevS = prevActive?.dataset
       ? ["a", "d", "m", "y", "v", "p"]
-          .filter((k) => prevActive.dataset[k])
-          .map((k) => `[data-${k}="${prevActive.dataset[k]}"]`)
-          .join("")
+        .filter((k) => prevActive.dataset[k])
+        .map((k) => `[data-${k}="${prevActive.dataset[k]}"]`)
+        .join("")
       : "";
     const inWrap = !!prevActive && !!this.#grid?.contains(prevActive);
     const inSwitcher = !!prevActive && !!this.#navi?.contains(prevActive);
     this.dataset.view = this.#view;
-    this.#showNav();
+    this.#showNavi();
     this.#showGrid();
-    if (!prevSel || (!inWrap && !inSwitcher)) return;
+    if (!prevS || (!inWrap && !inSwitcher)) return;
     const scope =
       prevA === "v" || prevA === "p" ? this.shadowRoot : this.#grid;
-    const butn = scope.querySelector(prevSel);
+    const butn = scope.querySelector(prevS);
     if (butn && !butn.disabled) {
       butn.focus();
       return;
@@ -549,7 +549,7 @@ export class CaliCalendar extends HTMLElement {
     if (inWrap) this.#grid.querySelector('[tabindex="0"]')?.focus();
   }
 
-  #showNav() {
+  #showNavi() {
     if (!this.hasAttribute("with-switcher")) {
       this.#navi?.remove();
       this.#navi = undefined;
