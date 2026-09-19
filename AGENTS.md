@@ -31,7 +31,7 @@ npm run minify  # rebuild calendar.min.js + map after touching calendar.js
   (`detail.date`, `detail.starts`, `detail.ends`).
 - **Observed attributes** (`observedAttributes`): `value`,
   `week-starts-on`, `with-offset`, `with-weekdays`, `with-switcher`,
-  `with-range`, `months`, `required`.
+  `with-ranger`, `months`, `required`.
   `minval` / `maxval` / `year-view` / `months-view` are **not** observed:
   read once as initial state; after connect drive the period via
   `.yearView` / `.monthsView`. Don't expect re-renders from setting them.
@@ -106,21 +106,32 @@ leave the grid naturally. `#keys` returns early on `Tab` — never
 
 ## Demo page (`index.html`)
 
-- One `<section>` per feature (`#bare`, `#weekdays`, `#offset`,
-  `#monday`, `#switcher`, `#selected`, `#range`, `#months`, `#ranger`,
-  `#open`, `#form`, `#events`, `#binding`, `#js`, `#react`, `#popover`,
-  `#dialog`, `#cdn`); sidebar
+- One `<section>` per feature (`#start`, `#hooks`, `#attributes`, `#bare`,
+  `#weekdays`, `#offset`, `#monday`, `#switcher`, `#selected`, `#range`,
+  `#months`, `#ranger`, `#open`, `#form`, `#events`, `#binding`, `#js`,
+  `#react`, `#popover`, `#dialog`); sidebar
   nav + mobile dots rail + `#nav-dialog` slide-in panel mirror them.
   `calendar.test.js` blocks are labeled with the same `#ids` — keep them
   in sync when adding a demo.
-- Reference styles to preserve: fixed date cells (`1.75em`), equal-width
-  switcher grid, `::part(months)` floored to `9ch` so the component width
-  never jumps between months, natural document scroll on mobile (no
-  fixed-height scroll containers), `#nav-dialog` slide animation without
-  backdrop dimming.
+- Reference styles to preserve: host `width: 280px` so days / months /
+  year views share one width, switcher `width: fit-content` and
+  `margin-inline: auto`, calendar `width: 100%` with centered wrap,
+  pane `width: 100%` and `repeat(7, minmax(0, 1fr))` so date cells
+  fill the host, switcher `auto` columns, `::part(prev)` /
+  `::part(next)` `width: fit-content`, `::part(months)` `9ch` and
+  `::part(years)` `4ch` so the switcher does not jump between months,
+  natural document scroll on mobile (no fixed-height scroll containers),
+  `#nav-dialog` flyout matching the dots-rail height, slide animation
+  without backdrop dimming.
 - Mobile script notes: section observer is viewport-rooted;
   dialog picks use `section.scrollIntoView()`; active-section highlight
   (`is-active`) applies to sidebar links, dialog links, and dots together.
+- Demo bodies (code + example) live in a `<template>` per section and
+  stamp when the section is about one viewport away. `#start` /
+  `#hooks` / `#attributes` stay eager. `calendar.js`, Highlight.js, and React load
+  on first use. Sidebar / hash jumps stamp every section through the
+  target first so scroll position is correct. Add an `inits[id]` wiring
+  function when a new demo needs listeners.
 
 ## Testing
 

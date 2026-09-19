@@ -379,7 +379,7 @@ describe("demo: months count", () => {
   });
 });
 
-// #ranger — with-range picks two dates; hover paints in-ranges.
+// #ranger — with-ranger picks two dates; hover paints in-ranges.
 describe("demo: ranger", () => {
   function hover(el, iso) {
     const btn = el.shadowRoot.querySelector(`[data-d="${iso}"]`);
@@ -390,7 +390,7 @@ describe("demo: ranger", () => {
 
   it("commits a sorted range and restarts on the next click", () => {
     const el = mount({
-      "with-range": true,
+      "with-ranger": true,
       "months-view": "9",
       "year-view": "2026",
     });
@@ -435,7 +435,7 @@ describe("demo: ranger", () => {
 
   it("swaps reversed clicks and allows a same-day range", () => {
     const el = mount({
-      "with-range": true,
+      "with-ranger": true,
       "months-view": "9",
       "year-view": "2026",
     });
@@ -449,7 +449,7 @@ describe("demo: ranger", () => {
 
   it("flags valueMissing until a complete range when required", () => {
     const el = mount({
-      "with-range": true,
+      "with-ranger": true,
       required: true,
       "months-view": "9",
       "year-view": "2026",
@@ -614,7 +614,7 @@ describe("demo: yearView / monthsView from JS", () => {
 describe("demo: react", () => {
   it("keeps value in sync with an outside listener", () => {
     const el = mount({
-      "with-range": true,
+      "with-ranger": true,
       "months-view": "9",
       "year-view": "2026",
     });

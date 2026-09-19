@@ -68,14 +68,14 @@ function daysPart(d, s, e, preview, today, disabled) {
  * `<cali-calendar>` — one or more months; optional two-date range.
  *
  * @element cali-calendar
- * @attr {string} [value=""] Selected date `YYYY-MM-DD`, or `YYYY-MM-DD/YYYY-MM-DD` when `with-range`.
+ * @attr {string} [value=""] Selected date `YYYY-MM-DD`, or `YYYY-MM-DD/YYYY-MM-DD` when `with-ranger`.
  * @attr {IsoDate} [minval=""] Earliest selectable date. Earlier day buttons render disabled.
  * @attr {IsoDate} [maxval=""] Latest selectable date. Later day buttons render disabled.
  * @attr {string} [week-starts-on="su"] `"mo"` starts the week on Monday, anything else is Sunday.
  * @attr {boolean} [with-offset] Adds empty leading cells so the 1st lines up with its weekday.
  * @attr {boolean} [with-weekdays] Shows weekday labels in the first row.
  * @attr {boolean} [with-switcher] Shows prev/next plus month and year view switching.
- * @attr {boolean} [with-range] Two-date picking. `value` becomes `start/end`.
+ * @attr {boolean} [with-ranger] Two-date picking. `value` becomes `start/end`.
  * @attr {number} [months="1"] Visible month panes (1–12). After connect, changing it re-renders.
  * @attr {number} [year-view] Initial visible year when there is no `value`. After connect use `.yearView`.
  * @attr {number} [months-view] Initial visible month (1-12) when there is no `value`. After connect use `.monthsView`.
@@ -110,7 +110,7 @@ export class CaliCalendar extends HTMLElement {
     "with-offset",
     "with-weekdays",
     "with-switcher",
-    "with-range",
+    "with-ranger",
     "months",
     "required",
   ];
@@ -321,7 +321,7 @@ export class CaliCalendar extends HTMLElement {
     const [s, e] = pair(v);
     const missing =
       this.hasAttribute("required") &&
-      (this.hasAttribute("with-range") ? !s || !e : !v);
+      (this.hasAttribute("with-ranger") ? !s || !e : !v);
     // `pair` sorts, so only the start can underflow and only the end
     // (or the lone start) can overflow.
     const lo = this.minval;
@@ -379,7 +379,7 @@ export class CaliCalendar extends HTMLElement {
         detail: {
           date,
           starts,
-          ends: this.hasAttribute("with-range") ? ends : starts,
+          ends: this.hasAttribute("with-ranger") ? ends : starts,
         },
       })
     );
@@ -387,7 +387,7 @@ export class CaliCalendar extends HTMLElement {
 
   #choose(date) {
     if (this.#off(date)) return;
-    const range = this.hasAttribute("with-range");
+    const range = this.hasAttribute("with-ranger");
     const prevA = this.#a;
     const next =
       range && prevA
@@ -509,7 +509,7 @@ export class CaliCalendar extends HTMLElement {
     const lo = this.#yr && new Date(this.#yr, this.#Mo - 1, 1);
     const hi = this.#yr && new Date(this.#yr, this.#Mo - 1 + this.#n, 1);
     if (!lo || date < lo || date >= hi) this.#at(date);
-    this.#a = this.hasAttribute("with-range") && !e ? s : "";
+    this.#a = this.hasAttribute("with-ranger") && !e ? s : "";
     this.#hov = "";
     this.#internals.setFormValue(normalized);
   }
@@ -555,7 +555,7 @@ export class CaliCalendar extends HTMLElement {
       butn(
         "prev",
         ` data-a="p" data-p="-1" aria-label="Previous period"`,
-        "Prev"
+        "←"
       ) +
       butn(
         `months${monthsOpen ? " selected" : ""}`,
@@ -570,7 +570,7 @@ export class CaliCalendar extends HTMLElement {
       butn(
         "next",
         ` data-a="p" data-p="1" aria-label="Next period"`,
-        "Next"
+        "→"
       );
   }
 

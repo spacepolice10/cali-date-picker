@@ -12,16 +12,6 @@
         }
       }
     </script>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/github.min.css"
-      media="(prefers-color-scheme: light)"
-    >
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/github-dark.min.css"
-      media="(prefers-color-scheme: dark)"
-    >
     <style>
       :root {
         --primary-color: #181818;
@@ -123,7 +113,7 @@
 
         .content {
           padding: var(--space-h) calc(var(--space-h) * 2) calc(var(--space-h) * 4)
-            calc(var(--space-h) * 2 + 22px);
+            calc(var(--space-h) * 2 + 40px);
         }
 
         .sidebar {
@@ -131,8 +121,13 @@
         }
 
         /* Slim rail pinned to the left edge: one tap opens
-           the full section list. Dots mirror the visible section. */
+           the section list. Dots mirror the visible section.
+           Row size is shared with #nav-dialog so labels sit
+           on the same lines as the dots. */
         .pager-dots {
+          --rail-pad: 16px;
+          --rail-gap: 10px;
+          --rail-row: 18px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -141,7 +136,8 @@
           top: 50%;
           transform: translateY(-50%);
           z-index: 30;
-          padding: 12px 7px;
+          box-sizing: border-box;
+          padding: var(--rail-pad) 10px;
           color: inherit;
           background: color-mix(in srgb, var(--secondary-color) 88%, transparent);
           border: 1px solid color-mix(in srgb, var(--primary-color) 20%, transparent);
@@ -154,21 +150,21 @@
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 8px;
+          gap: var(--rail-gap);
           pointer-events: none;
         }
 
         .pager-dots-list > span {
-          width: 14px;
-          height: 14px;
+          width: var(--rail-row);
+          height: var(--rail-row);
           display: grid;
           place-items: center;
         }
 
         .pager-dots-list > span::before {
           content: "";
-          width: 6px;
-          height: 6px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
           background: currentColor;
           opacity: 0.35;
@@ -181,28 +177,31 @@
           background: var(--accent-color);
         }
 
-        /* Section list as a left-side sheet. Native dialog:
-           Escape and backdrop come free. Slides in from the left,
-           with no backdrop dimming. */
+        /* Section list as a flyout the same height as the dots rail.
+           Native dialog: Escape and backdrop come free. Slides out
+           beside the trigger, with no backdrop dimming. top / left /
+           height are set from the rail's box before open. */
         #nav-dialog {
+          --rail-pad: 16px;
+          --rail-gap: 10px;
+          --rail-row: 18px;
           position: fixed;
-          inset-block: 0;
+          inset: unset;
+          top: 0;
           left: 0;
-          right: auto;
           margin: 0;
-          padding: calc(var(--space-h) * 2);
-          border: none;
-          border-right: 1px solid color-mix(in srgb, var(--primary-color) 20%, transparent);
+          padding: var(--rail-pad) 12px;
+          border: 1px solid color-mix(in srgb, var(--primary-color) 20%, transparent);
+          border-left: none;
           background: var(--secondary-color);
           color: inherit;
-          width: min(78vw, 300px);
+          width: min(72vw, 260px);
           max-width: none;
-          height: 100vh;
-          height: 100dvh;
+          height: auto;
           max-height: none;
           box-sizing: border-box;
-          overflow-y: auto;
-          transform: translateX(-105%);
+          overflow: hidden;
+          transform: translateX(-110%);
           transition:
             transform 0.25s ease,
             overlay 0.25s allow-discrete,
@@ -214,17 +213,23 @@
         }
 
         #nav-dialog[open] {
+          display: flex;
+          flex-direction: column;
           transform: none;
         }
 
         @starting-style {
           #nav-dialog[open] {
-            transform: translateX(-105%);
+            transform: translateX(-110%);
           }
         }
 
         #nav-dialog::backdrop {
           background: transparent;
+        }
+
+        #nav-dialog nav {
+          display: contents;
         }
 
         #nav-dialog nav ul {
@@ -233,42 +238,38 @@
           padding: 0;
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: var(--rail-gap);
+          flex: 1;
+          min-height: 0;
+          overflow: hidden;
+        }
+
+        #nav-dialog nav li {
+          margin: 0;
+          height: var(--rail-row);
+          display: flex;
+          align-items: center;
         }
 
         #nav-dialog nav a {
-          display: inline-flex;
+          display: flex;
           align-items: center;
-          gap: 8px;
+          height: 100%;
+          min-width: 0;
           color: var(--primary-color);
           text-decoration: none;
-          white-space: normal;
-          font-size: 1.1rem;
-          padding-block: 6px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          font-size: 0.75rem;
+          line-height: var(--rail-row);
+          padding: 0;
           opacity: 0.55;
           transition: opacity 0.2s ease;
         }
 
-        #nav-dialog nav a::before {
-          content: "";
-          flex: none;
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: currentColor;
-          opacity: 0;
-          transform: scale(0.6);
-          transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
-        }
-
         #nav-dialog nav a.is-active {
           opacity: 1;
-        }
-
-        #nav-dialog nav a.is-active::before {
-          opacity: 1;
-          transform: scale(1);
-          background: var(--accent-color);
         }
 
         main > section {
@@ -349,6 +350,12 @@
         border-top: 1px solid;
       }
 
+      /* Unhydrated demos keep a rough height so fast flings don't
+         collapse the page. Removed once the section's <template> stamps. */
+      main > section:has(> template) {
+        min-height: 22em;
+      }
+
       button {
         font: inherit;
       }
@@ -363,6 +370,12 @@
         background: color-mix(in srgb, var(--primary-color) 6%, var(--secondary-color));
         padding: var(--space-v) var(--space-h);
         margin-block-start: var(--space-h);
+      }
+
+      /* Hold space until the lazy React demo mounts so later
+         sections don't shift when jumping past #react. */
+      #react-root:empty {
+        min-height: 20em;
       }
 
       pre {
@@ -444,7 +457,7 @@
 
       cali-calendar {
         display: block;
-        width: fit-content;
+        width: 280px;
         max-width: 100%;
         border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
         padding: var(--space-h);
@@ -452,23 +465,31 @@
 
       cali-calendar::part(switcher) {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: auto auto auto auto;
+        justify-content: start;
         gap: var(--space-v);
+        width: fit-content;
         margin-block-end: var(--space-h);
+        margin-inline: auto;
       }
 
       cali-calendar::part(calendar) {
         display: flex;
         flex-wrap: wrap;
         gap: var(--space-h);
-        justify-content: start;
+        justify-content: center;
+        width: 100%;
       }
 
       cali-calendar::part(pane) {
         display: grid;
         gap: var(--space-v);
-        grid-template-columns: repeat(7, 1.75em);
-        justify-content: start;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        justify-content: stretch;
+        box-sizing: border-box;
+        width: 100%;
+        padding: var(--space-v);
+        border: 1px solid color-mix(in srgb, var(--primary-color) 28%, transparent);
       }
 
       cali-calendar::part(caption) {
@@ -497,8 +518,8 @@
       }
 
       cali-calendar::part(weekday) {
-        width: 1.75em;
-        height: 1.75em;
+        width: 100%;
+        aspect-ratio: 1;
         display: grid;
         place-items: center;
         white-space: nowrap;
@@ -506,8 +527,8 @@
       }
 
       cali-calendar::part(offset) {
-        width: 1.75em;
-        height: 1.75em;
+        width: 100%;
+        aspect-ratio: 1;
       }
 
       cali-calendar::part(prev),
@@ -519,47 +540,80 @@
       cali-calendar::part(yr-butn) {
         font: inherit;
         color: inherit;
+        padding: var(--space-v);
+        transition: border-color 0.15s ease, background-color 0.15s ease;
+      }
+
+      cali-calendar::part(date),
+      cali-calendar::part(mn-butn),
+      cali-calendar::part(yr-butn) {
         background: transparent;
         border: 1px solid transparent;
-        padding: var(--space-v);
       }
 
       cali-calendar::part(date) {
-        width: 1.75em;
-        height: 1.75em;
+        box-sizing: border-box;
+        width: 100%;
         aspect-ratio: 1;
         padding: 0;
         display: grid;
         place-items: center;
       }
 
-      /* Switcher buttons share one fixed width: equal grid tracks sized
-         to fit the longest month name ("September"). */
       cali-calendar::part(prev),
       cali-calendar::part(next),
       cali-calendar::part(months),
       cali-calendar::part(years) {
-        min-width: 0;
         box-sizing: border-box;
         text-align: center;
         white-space: nowrap;
+        border: 1px solid color-mix(in srgb, var(--primary-color) 28%, transparent);
+        background: color-mix(in srgb, var(--primary-color) 8%, var(--secondary-color));
+      }
+
+      cali-calendar::part(prev):hover,
+      cali-calendar::part(next):hover,
+      cali-calendar::part(months):hover,
+      cali-calendar::part(years):hover,
+      cali-calendar::part(date):hover,
+      cali-calendar::part(mn-butn):hover,
+      cali-calendar::part(yr-butn):hover {
+        border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
+        background: color-mix(in srgb, var(--primary-color) 14%, var(--secondary-color));
+      }
+
+      cali-calendar::part(prev),
+      cali-calendar::part(next) {
+        width: fit-content;
+      }
+
+      /* Longest en-US month name is "September" (9ch). Fixed width so
+         May does not shrink the switcher. */
+      cali-calendar::part(months) {
+        width: calc(9ch + 2 * var(--space-v) + 2px);
         overflow: hidden;
         text-overflow: ellipsis;
       }
 
-      /* Floor the month button to the longest month name (monospace, so
-         exactly 9ch plus padding). Without this, fit-content sizing makes
-         the whole calendar narrower in "May" than in "September". */
-      cali-calendar::part(months) {
-        min-width: calc(9ch + 2 * var(--space-v));
+      cali-calendar::part(years) {
+        width: calc(4ch + 2 * var(--space-v) + 2px);
       }
 
       cali-calendar::part(current) {
         border-color: var(--accent-color);
       }
 
+      cali-calendar::part(current):hover {
+        border-color: var(--accent-color);
+      }
+
       cali-calendar::part(disabled) {
         opacity: 0.35;
+      }
+
+      cali-calendar::part(disabled):hover {
+        border-color: transparent;
+        background: transparent;
       }
 
       cali-calendar::part(selected) {
@@ -581,6 +635,7 @@
       <aside class="sidebar">
         <nav aria-label="Demo sections">
           <ul>
+            <li><a href="#start">Quick start</a></li>
             <li><a href="#hooks">Style hooks</a></li>
             <li><a href="#attributes">Attributes</a></li>
             <li><a href="#bare">Bare month</a></li>
@@ -600,7 +655,6 @@
             <li><a href="#react">React</a></li>
             <li><a href="#popover">Popover</a></li>
             <li><a href="#dialog">Dialog</a></li>
-            <li><a href="#cdn">jsDelivr</a></li>
           </ul>
         </nav>
       </aside>
@@ -609,12 +663,29 @@
         <header>
           <h1>Cali Calendar</h1>
           <p>
-            One or more months. Attributes configure the grid; CSS parts and
-            <code>data-view</code> style the rest.
+            Simple drop-in replacement for the native date picker. You can render one or more months in shadow DOM, style it with CSS parts, submit value of it as a form field and use events to react on data changes
           </p>
         </header>
 
         <main>
+      <section id="start">
+        <h2>Quick start</h2>
+        <p>
+          <code>&lt;cali-calendar&gt;</code> is a custom element with no
+          dependencies. Load the module, then put the tag in the page.
+        </p>
+        <h3 class="block-title">Code</h3>
+        <pre><code class="language-html">&lt;script
+  type="module"
+  src="https://cdn.jsdelivr.net/gh/spacepolice10/cali-date-picker@main/calendar.min.js"
+&gt;&lt;/script&gt;
+&lt;cali-calendar&gt;&lt;/cali-calendar&gt;</code></pre>
+        <p>
+          jsDelivr serves <code>calendar.min.js</code> from GitHub. Pin a tag
+          instead of <code>@main</code> when you want a fixed build. There's no package manager support. Cali is just 2.6kb minified and gzipped & browsers easily handle up to 40 script modules in the page. 
+        </p>
+      </section>
+
       <section id="hooks">
         <h2>Style hooks</h2>
         <p>Host state:</p>
@@ -644,7 +715,8 @@
 
 cali-calendar::part(pane) {
   display: grid;
-  grid-template-columns: repeat(7, 1.75em);
+  width: 100%;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 cali-calendar::part(in-ranges) {
@@ -670,7 +742,7 @@ cali-calendar::part(selected) {
           <tbody>
             <tr>
               <td><code>value="YYYY-MM-DD"</code></td>
-              <td>Selected date <code>YYYY-MM-DD</code>, or <code>YYYY-MM-DD/YYYY-MM-DD</code> with <code>with-range</code>. Paints <code>selected</code>, sets the form value, opens on the start month. Empty clears the selection.</td>
+              <td>Selected date <code>YYYY-MM-DD</code>, or <code>YYYY-MM-DD/YYYY-MM-DD</code> with <code>with-ranger</code>. Paints <code>selected</code>, sets the form value, opens on the start month. Empty clears the selection.</td>
             </tr>
             <tr>
               <td><code>minval="YYYY-MM-DD"</code></td>
@@ -701,7 +773,7 @@ cali-calendar::part(selected) {
               <td>How many month panes to show (1–12). Default 1. Distinct from <code>months-view</code>.</td>
             </tr>
             <tr>
-              <td><code>with-range</code></td>
+              <td><code>with-ranger</code></td>
               <td>Pick two dates. First click is <code>starts</code>; hover paints <code>in-ranges</code>; second click saves <code>starts/ends</code>. The next click starts over. <code>change</code> detail includes <code>date</code>, <code>starts</code>, and <code>ends</code>.</td>
             </tr>
             <tr>
@@ -723,10 +795,12 @@ cali-calendar::part(selected) {
       <section id="bare">
         <h2>Bare month</h2>
         <p>No attributes. Current month, day buttons only.</p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar&gt;&lt;/cali-calendar&gt;</code></pre>
         <h3 class="block-title">Example</h3>
         <cali-calendar></cali-calendar>
+        </template>
       </section>
 
       <section id="weekdays">
@@ -735,24 +809,29 @@ cali-calendar::part(selected) {
           Labels in the first row. Without offset, the 1st still starts in
           column one.
         </p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar with-weekdays&gt;&lt;/cali-calendar&gt;</code></pre>
         <h3 class="block-title">Example</h3>
         <cali-calendar with-weekdays></cali-calendar>
+        </template>
       </section>
 
       <section id="offset">
         <h2>Offset cells</h2>
         <p>Empty leading cells so the 1st lines up with its weekday.</p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar with-weekdays with-offset&gt;&lt;/cali-calendar&gt;</code></pre>
         <h3 class="block-title">Example</h3>
         <cali-calendar with-weekdays with-offset></cali-calendar>
+        </template>
       </section>
 
       <section id="monday">
         <h2>Monday first</h2>
         <p>Week starts on Monday. Default is Sunday.</p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   week-starts-on="mo"
@@ -765,6 +844,7 @@ cali-calendar::part(selected) {
           with-weekdays
           with-offset
         ></cali-calendar>
+        </template>
       </section>
 
       <section id="switcher">
@@ -775,6 +855,7 @@ cali-calendar::part(selected) {
           that panel is open. A fixed <code>calendar</code> height keeps the
           page from jumping between views.
         </p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   with-weekdays
@@ -787,6 +868,7 @@ cali-calendar::part(selected) {
           with-offset
           with-switcher
         ></cali-calendar>
+        </template>
       </section>
 
       <section id="selected">
@@ -795,6 +877,7 @@ cali-calendar::part(selected) {
           <code>value</code> paints <code>selected</code>. Today keeps
           <code>current</code> even when it is not selected.
         </p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   value="2026-09-13"
@@ -811,6 +894,7 @@ cali-calendar::part(selected) {
           with-offset
           with-switcher
         ></cali-calendar>
+        </template>
       </section>
 
       <section id="range">
@@ -820,6 +904,7 @@ cali-calendar::part(selected) {
           outside the range. Only the buttons are gated — months, year, and
           prev / next stay navigable.
         </p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   value="2026-09-13"
@@ -838,14 +923,16 @@ cali-calendar::part(selected) {
           with-offset
           with-switcher
         ></cali-calendar>
+        </template>
       </section>
 
       <section id="months">
         <h2>Months</h2>
         <p>
           <code>months</code> paints that many sibling <code>pane</code>s.
-          Host CSS wraps them. Prev / next move by the same count.
+          Host CSS wraps them.
         </p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   months="3"
@@ -853,7 +940,6 @@ cali-calendar::part(selected) {
   year-view="2026"
   with-weekdays
   with-offset
-  with-switcher
 &gt;&lt;/cali-calendar&gt;</code></pre>
         <h3 class="block-title">Example</h3>
         <cali-calendar
@@ -862,21 +948,22 @@ cali-calendar::part(selected) {
           year-view="2026"
           with-weekdays
           with-offset
-          with-switcher
         ></cali-calendar>
+        </template>
       </section>
 
       <section id="ranger">
         <h2>Ranger</h2>
         <p>
-          <code>with-range</code> picks two dates. Hover (or focus) the second
+          <code>with-ranger</code> picks two dates. Hover (or focus) the second
           date to preview <code>in-ranges</code>. The saved value is
           <code>YYYY-MM-DD/YYYY-MM-DD</code>. Clicking again starts a new range.
         </p>
+        <template>
         <h3 class="block-title">Code — HTML</h3>
         <pre><code class="language-html">&lt;cali-calendar
   id="ranger-cal"
-  with-range
+  with-ranger
   months="2"
   months-view="9"
   year-view="2026"
@@ -891,7 +978,7 @@ cali-calendar::part(selected) {
         <h3 class="block-title">Example</h3>
         <cali-calendar
           id="ranger-cal"
-          with-range
+          with-ranger
           months="2"
           months-view="9"
           year-view="2026"
@@ -901,6 +988,7 @@ cali-calendar::part(selected) {
         ></cali-calendar>
         <h3 class="block-title">Preview</h3>
         <output id="ranger-out" class="preview">Pick two dates.</output>
+        </template>
       </section>
 
       <section id="open">
@@ -909,6 +997,7 @@ cali-calendar::part(selected) {
           <code>year-view</code> and <code>months-view</code> set the initial
           view when there is no <code>value</code>.
         </p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;cali-calendar
   year-view="2025"
@@ -925,6 +1014,7 @@ cali-calendar::part(selected) {
           with-offset
           with-switcher
         ></cali-calendar>
+        </template>
       </section>
 
       <section id="form">
@@ -933,6 +1023,7 @@ cali-calendar::part(selected) {
           Form-associated: <code>name</code> submits ISO <code>YYYY-MM-DD</code>.
           Reset clears <code>value</code>.
         </p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-html">&lt;form&gt;
   &lt;cali-calendar name="booking" with-weekdays with-offset&gt;&lt;/cali-calendar&gt;
@@ -953,6 +1044,7 @@ cali-calendar::part(selected) {
           <h3 class="block-title">Preview</h3>
           <output id="booking-out" class="preview"></output>
         </form>
+        </template>
       </section>
 
       <section id="events">
@@ -961,6 +1053,7 @@ cali-calendar::part(selected) {
           <code>change</code> reports the date.
           <code>beforechange</code> is cancelable — this one rejects Sundays.
         </p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-javascript">calendar.addEventListener("beforechange", (event) => {
   const date = new Date(`${event.detail.date}T00:00`);
@@ -975,6 +1068,7 @@ cali-calendar::part(selected) {
         ></cali-calendar>
         <h3 class="block-title">Preview</h3>
         <output id="guarded-out" class="preview">Pick a date. Sundays stay unselected.</output>
+        </template>
       </section>
 
       <section id="binding">
@@ -984,6 +1078,7 @@ cali-calendar::part(selected) {
           <code>YYYY-MM-DD</code>. Sync both ways with <code>change</code>.
           Clearing the input clears the calendar.
         </p>
+        <template>
         <h3 class="block-title">Code — HTML</h3>
         <pre><code class="language-html">&lt;input
   id="bound-input"
@@ -1028,6 +1123,7 @@ input.addEventListener("change", () => {
         ></cali-calendar>
         <h3 class="block-title">Preview</h3>
         <output id="bound-out" class="preview">2026-09-13</output>
+        </template>
       </section>
 
       <section id="js">
@@ -1036,6 +1132,7 @@ input.addEventListener("change", () => {
           After connect, drive the visible period with
           <code>.yearView</code> and <code>.monthsView</code>.
         </p>
+        <template>
         <h3 class="block-title">Code</h3>
         <pre><code class="language-javascript">calendar.yearView = 2025;
 calendar.monthsView = 12;</code></pre>
@@ -1050,6 +1147,7 @@ calendar.monthsView = 12;</code></pre>
           with-offset
           with-switcher
         ></cali-calendar>
+        </template>
       </section>
 
       <section id="react">
@@ -1060,6 +1158,7 @@ calendar.monthsView = 12;</code></pre>
           <code>change</code> on a ref — React does not wire custom events to
           <code>onChange</code>.
         </p>
+        <template>
         <h3 class="block-title">Code — HTML</h3>
         <pre><code class="language-html">&lt;script type="importmap"&gt;
   {
@@ -1088,7 +1187,7 @@ function Ranger() {
       &lt;cali-calendar
         ref={ref}
         value={value}
-        with-range=""
+        with-ranger=""
         months="2"
         months-view="9"
         year-view="2026"
@@ -1104,6 +1203,7 @@ function Ranger() {
 createRoot(document.getElementById("react-root")).render(&lt;Ranger /&gt;);</code></pre>
         <h3 class="block-title">Example</h3>
         <div id="react-root"></div>
+        </template>
       </section>
 
       <section id="popover">
@@ -1112,6 +1212,7 @@ createRoot(document.getElementById("react-root")).render(&lt;Ranger /&gt;);</cod
           Native <code>popover</code>. <code>change</code> writes the date on
           the trigger and closes the popover.
         </p>
+        <template>
         <h3 class="block-title">Example</h3>
         <button type="button" id="date-trigger" popovertarget="date-popover">
           Pick a date
@@ -1147,6 +1248,7 @@ popover.addEventListener("toggle", (event) => {
   popover.style.top = `${Math.max(0, top)}px`;
   popover.style.left = `${rect.left}px`;
 });</code></pre>
+        </template>
       </section>
 
       <section id="dialog">
@@ -1155,6 +1257,7 @@ popover.addEventListener("toggle", (event) => {
           Native <code>dialog</code>. Pick a date —
           <code>change</code> writes the date and closes the dialog.
         </p>
+        <template>
         <h3 class="block-title">Example</h3>
         <button type="button" id="dialog-trigger">Pick a date</button>
         <dialog id="date-dialog">
@@ -1190,20 +1293,7 @@ calendar.addEventListener("change", (event) => {
   output.textContent = event.detail.date;
   dialog.close();
 });</code></pre>
-      </section>
-
-      <section id="cdn">
-        <h2>jsDelivr</h2>
-        <p>
-          <code>npm run minify</code> writes <code>calendar.min.js</code>.
-          jsDelivr serves that file from GitHub; pin a tag when you have one.
-        </p>
-        <h3 class="block-title">Code</h3>
-        <pre><code class="language-html">&lt;script
-  type="module"
-  src="https://cdn.jsdelivr.net/gh/spacepolice10/cali-date-picker@main/calendar.min.js"
-&gt;&lt;/script&gt;
-&lt;cali-calendar&gt;&lt;/cali-calendar&gt;</code></pre>
+        </template>
       </section>
       </main>
       </div>
@@ -1216,155 +1306,289 @@ calendar.addEventListener("change", (event) => {
     <dialog id="nav-dialog" aria-label="Demo sections">
       <nav aria-label="Demo sections">
         <ul id="nav-list"></ul>
-        <p>
-          <button type="button" id="nav-close">Close</button>
-        </p>
       </nav>
     </dialog>
 
     <script type="module">
-      import "./calendar.js";
+      const HLJS = "https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1";
+      const mainSections = [...document.querySelectorAll("main > section")];
+      const stamped = new Set();
+      const started = new Set();
 
-      const rangerCal = document.getElementById("ranger-cal");
-      const rangerOut = document.getElementById("ranger-out");
-      rangerCal.addEventListener("change", (event) => {
-        rangerOut.textContent = event.detail.date;
-      });
+      let calendarReady;
+      const loadCalendar = () => (calendarReady ??= import("./calendar.js"));
 
-      const bookingForm = document.getElementById("booking-form");
-      const bookingOut = document.getElementById("booking-out");
-      bookingForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const date = new FormData(bookingForm).get("booking") || "(empty)";
-        bookingOut.textContent = `booking=${date}`;
-      });
-      bookingForm.addEventListener("reset", () => {
-        bookingOut.textContent = "";
-      });
+      let hljsReady;
+      const loadHljs = () =>
+        (hljsReady ??= (async () => {
+          const light = document.createElement("link");
+          light.rel = "stylesheet";
+          light.href = `${HLJS}/styles/github.min.css`;
+          light.media = "(prefers-color-scheme: light)";
+          const dark = document.createElement("link");
+          dark.rel = "stylesheet";
+          dark.href = `${HLJS}/styles/github-dark.min.css`;
+          dark.media = "(prefers-color-scheme: dark)";
+          document.head.append(light, dark);
+          const [
+            { default: hljs },
+            { default: xml },
+            { default: javascript },
+          ] = await Promise.all([
+            import(`${HLJS}/es/core.min.js`),
+            import(`${HLJS}/es/languages/xml.min.js`),
+            import(`${HLJS}/es/languages/javascript.min.js`),
+          ]);
+          hljs.registerLanguage("xml", xml);
+          hljs.registerLanguage("html", xml);
+          hljs.registerLanguage("javascript", javascript);
+          return hljs;
+        })());
 
-      const guarded = document.getElementById("guarded");
-      const guardedOut = document.getElementById("guarded-out");
-      guarded.addEventListener("beforechange", (event) => {
-        const date = new Date(`${event.detail.date}T00:00`);
-        if (date.getDay() === 0) {
-          event.preventDefault();
-          guardedOut.textContent = `${event.detail.date} is Sunday — blocked.`;
-        }
-      });
-      guarded.addEventListener("change", (event) => {
-        guardedOut.textContent = event.detail.date;
-      });
+      const highlight = (root) => {
+        const blocks = root.querySelectorAll("pre code[class*='language-']");
+        if (!blocks.length) return;
+        loadHljs().then((hljs) => {
+          for (const block of blocks) {
+            if (!block.dataset.highlighted) hljs.highlightElement(block);
+          }
+        });
+      };
 
-      const boundInput = document.getElementById("bound-input");
-      const bound = document.getElementById("bound");
-      const boundOut = document.getElementById("bound-out");
-      bound.addEventListener("change", (event) => {
-        boundInput.value = event.detail.date;
-        boundOut.textContent = event.detail.date;
-      });
-      boundInput.addEventListener("change", () => {
-        bound.value = boundInput.value;
-        boundOut.textContent = boundInput.value || "(empty)";
-      });
-
-      const driven = document.getElementById("driven");
-      document.getElementById("to-today").addEventListener("click", () => {
-        const today = new Date();
-        driven.yearView = today.getFullYear();
-        driven.monthsView = today.getMonth() + 1;
-      });
-      document.getElementById("to-december").addEventListener("click", () => {
-        driven.yearView = 2025;
-        driven.monthsView = 12;
-      });
-
-      const trigger = document.getElementById("date-trigger");
-      const popover = document.getElementById("date-popover");
-      const popoverCalendar = popover.querySelector("cali-calendar");
-      popoverCalendar.addEventListener("change", (event) => {
-        trigger.textContent = event.detail.date;
-        popover.hidePopover();
-      });
-      popover.addEventListener("toggle", (event) => {
-        if (event.newState !== "open") return;
-        const rect = trigger.getBoundingClientRect();
-        const gap = 5;
-        const top =
-          rect.bottom + gap + popover.offsetHeight > window.innerHeight
-            ? rect.top - gap - popover.offsetHeight
-            : rect.bottom + gap;
-        popover.style.top = `${Math.max(0, top)}px`;
-        popover.style.left = `${rect.left}px`;
-      });
-
-      const dialogTrigger = document.getElementById("dialog-trigger");
-      const dialog = document.getElementById("date-dialog");
-      const dialogCalendar = dialog.querySelector("cali-calendar");
-      const dialogOut = document.getElementById("dialog-out");
-      dialogTrigger.addEventListener("click", () => {
-        dialog.showModal();
-      });
-      document.getElementById("dialog-close").addEventListener("click", () => {
-        dialog.close();
-      });
-      dialogCalendar.addEventListener("change", (event) => {
-        dialogTrigger.textContent = event.detail.date;
-        dialogOut.textContent = event.detail.date;
-        dialog.close();
-      });
-      // Backdrop click closes either dialog (light dismiss).
-      for (const dlg of [dialog, document.getElementById("nav-dialog")]) {
+      const lightDismiss = (dlg) => {
         dlg?.addEventListener("click", (event) => {
           if (event.target === dlg) dlg.close();
         });
-      }
-    </script>
-    <script type="module">
-      import { createElement as h, useEffect, useRef, useState } from "react";
-      import { createRoot } from "react-dom/client";
+      };
+      lightDismiss(document.getElementById("nav-dialog"));
 
-      const root = document.getElementById("react-root");
-      function Ranger() {
-        const ref = useRef(null);
-        const [value, setValue] = useState("");
-        useEffect(() => {
-          const el = ref.current;
-          const onChange = (event) => setValue(event.detail.date);
-          el.addEventListener("change", onChange);
-          return () => el.removeEventListener("change", onChange);
-        }, []);
-        return h(
-          "div",
-          null,
-          h("cali-calendar", {
-            ref,
-            value,
-            "with-range": "",
-            months: "2",
-            "months-view": "9",
-            "year-view": "2026",
-            "with-weekdays": "",
-            "with-offset": "",
-            "with-switcher": "",
-          }),
-          h("output", { className: "preview" }, value || "Pick two dates.")
-        );
-      }
-      createRoot(root).render(h(Ranger));
-    </script>
-    <script type="module">
-      import hljs from "https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/es/core.min.js";
-      import xml from "https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/es/languages/xml.min.js";
-      import javascript from "https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/es/languages/javascript.min.js";
+      const inits = {
+        ranger() {
+          const cal = document.getElementById("ranger-cal");
+          const out = document.getElementById("ranger-out");
+          cal.addEventListener("change", (event) => {
+            out.textContent = event.detail.date;
+          });
+        },
+        form() {
+          const form = document.getElementById("booking-form");
+          const out = document.getElementById("booking-out");
+          form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const date = new FormData(form).get("booking") || "(empty)";
+            out.textContent = `booking=${date}`;
+          });
+          form.addEventListener("reset", () => {
+            out.textContent = "";
+          });
+        },
+        events() {
+          const cal = document.getElementById("guarded");
+          const out = document.getElementById("guarded-out");
+          cal.addEventListener("beforechange", (event) => {
+            const date = new Date(`${event.detail.date}T00:00`);
+            if (date.getDay() === 0) {
+              event.preventDefault();
+              out.textContent = `${event.detail.date} is Sunday — blocked.`;
+            }
+          });
+          cal.addEventListener("change", (event) => {
+            out.textContent = event.detail.date;
+          });
+        },
+        binding() {
+          const input = document.getElementById("bound-input");
+          const cal = document.getElementById("bound");
+          const out = document.getElementById("bound-out");
+          cal.addEventListener("change", (event) => {
+            input.value = event.detail.date;
+            out.textContent = event.detail.date;
+          });
+          input.addEventListener("change", () => {
+            cal.value = input.value;
+            out.textContent = input.value || "(empty)";
+          });
+        },
+        js() {
+          const cal = document.getElementById("driven");
+          document.getElementById("to-today").addEventListener("click", () => {
+            const today = new Date();
+            cal.yearView = today.getFullYear();
+            cal.monthsView = today.getMonth() + 1;
+          });
+          document.getElementById("to-december").addEventListener("click", () => {
+            cal.yearView = 2025;
+            cal.monthsView = 12;
+          });
+        },
+        async react() {
+          const [
+            { createElement: h, useEffect, useRef, useState },
+            { createRoot },
+          ] = await Promise.all([
+            import("react"),
+            import("react-dom/client"),
+          ]);
+          const root = document.getElementById("react-root");
+          function Ranger() {
+            const ref = useRef(null);
+            const [value, setValue] = useState("");
+            useEffect(() => {
+              const el = ref.current;
+              const onChange = (event) => setValue(event.detail.date);
+              el.addEventListener("change", onChange);
+              return () => el.removeEventListener("change", onChange);
+            }, []);
+            return h(
+              "div",
+              null,
+              h("cali-calendar", {
+                ref,
+                value,
+                "with-ranger": "",
+                months: "2",
+                "months-view": "9",
+                "year-view": "2026",
+                "with-weekdays": "",
+                "with-offset": "",
+                "with-switcher": "",
+              }),
+              h("output", { className: "preview" }, value || "Pick two dates."),
+            );
+          }
+          createRoot(root).render(h(Ranger));
+        },
+        popover() {
+          const trigger = document.getElementById("date-trigger");
+          const popover = document.getElementById("date-popover");
+          const cal = popover.querySelector("cali-calendar");
+          cal.addEventListener("change", (event) => {
+            trigger.textContent = event.detail.date;
+            popover.hidePopover();
+          });
+          popover.addEventListener("toggle", (event) => {
+            if (event.newState !== "open") return;
+            const rect = trigger.getBoundingClientRect();
+            const gap = 5;
+            const top =
+              rect.bottom + gap + popover.offsetHeight > window.innerHeight
+                ? rect.top - gap - popover.offsetHeight
+                : rect.bottom + gap;
+            popover.style.top = `${Math.max(0, top)}px`;
+            popover.style.left = `${rect.left}px`;
+          });
+        },
+        dialog() {
+          const trigger = document.getElementById("dialog-trigger");
+          const dialog = document.getElementById("date-dialog");
+          const cal = dialog.querySelector("cali-calendar");
+          const out = document.getElementById("dialog-out");
+          trigger.addEventListener("click", () => dialog.showModal());
+          document.getElementById("dialog-close").addEventListener("click", () => {
+            dialog.close();
+          });
+          cal.addEventListener("change", (event) => {
+            trigger.textContent = event.detail.date;
+            out.textContent = event.detail.date;
+            dialog.close();
+          });
+          lightDismiss(dialog);
+        },
+      };
 
-      hljs.registerLanguage("xml", xml);
-      hljs.registerLanguage("html", xml);
-      hljs.registerLanguage("javascript", javascript);
-      document.querySelectorAll("pre code[class*='language-']").forEach((block) => {
-        hljs.highlightElement(block);
+      // Stamp is sync so hash / sidebar jumps get real section heights
+      // before scrollIntoView. Hydrate then loads calendar / React / hljs
+      // and wires the demo.
+      const stamp = (section) => {
+        if (!section || stamped.has(section.id)) return;
+        stamped.add(section.id);
+        const tpl = section.querySelector(":scope > template");
+        if (!tpl) return;
+        section.append(tpl.content);
+        tpl.remove();
+      };
+
+      const stampThrough = (target) => {
+        for (const section of mainSections) {
+          stamp(section);
+          if (section === target) break;
+        }
+      };
+
+      const hydrate = async (section) => {
+        if (!section || started.has(section.id)) return;
+        started.add(section.id);
+        stamp(section);
+        if (section.querySelector("cali-calendar") || section.id === "react") {
+          await loadCalendar();
+        }
+        await inits[section.id]?.();
+        highlight(section);
+      };
+
+      const hydrateThrough = async (target) => {
+        // Define the element before stamping so calendars have real
+        // height and hash / sidebar jumps land on the right section.
+        await loadCalendar();
+        stampThrough(target);
+        for (const section of mainSections) {
+          hydrate(section);
+          if (section === target) break;
+        }
+      };
+
+      const scrollToSection = (target) => {
+        const html = document.documentElement;
+        const prev = html.style.scrollBehavior;
+        html.style.scrollBehavior = "auto";
+        target.scrollIntoView({ block: "start" });
+        html.style.scrollBehavior = prev;
+      };
+
+      const lazy =
+        "IntersectionObserver" in window
+          ? new IntersectionObserver(
+              (entries) => {
+                for (const entry of entries) {
+                  if (!entry.isIntersecting) continue;
+                  lazy.unobserve(entry.target);
+                  hydrate(entry.target);
+                }
+              },
+              { rootMargin: "100% 0px" },
+            )
+          : null;
+
+      const observeLazy = () => {
+        if (!lazy) {
+          mainSections.forEach((section) => hydrate(section));
+          return;
+        }
+        for (const section of mainSections) {
+          if (!started.has(section.id)) lazy.observe(section);
+        }
+      };
+
+      const hashTarget = () =>
+        location.hash ? document.querySelector(location.hash) : null;
+
+      const go = hashTarget();
+      if (go) {
+        await hydrateThrough(go);
+        scrollToSection(go);
+      }
+      observeLazy();
+
+      addEventListener("hashchange", async () => {
+        const target = hashTarget();
+        if (!target) return;
+        await hydrateThrough(target);
+        scrollToSection(target);
       });
-    </script>
-    <script type="module">
+
+      const idle = globalThis.requestIdleCallback || ((fn) => setTimeout(fn, 200));
+      idle(() => loadCalendar());
+
       const sidebar = document.querySelector(".sidebar");
       const nav = document.querySelector(".sidebar nav");
       const rail = document.getElementById("pager-dots");
@@ -1444,24 +1668,51 @@ calendar.addEventListener("change", (event) => {
           sections.forEach((section) => observer.observe(section));
         };
         createObserver();
-        mq.addEventListener?.("change", createObserver);
+        mq.addEventListener?.("change", () => {
+          createObserver();
+          observeLazy();
+        });
         setActive(current, false);
       }
 
-      // The rail opens the section list; a pick closes and scrolls to it.
-      rail?.addEventListener("click", () => dialog.showModal());
-      document
-        .getElementById("nav-close")
-        ?.addEventListener("click", () => dialog.close());
-      dialogList.addEventListener("click", (event) => {
-        const link = event.target.closest("a");
+      // Stamp through the target first so earlier demos have real height
+      // and the jump lands on the right section.
+      const jumpTo = async (target, replace) => {
+        await hydrateThrough(target);
+        if (replace) history.replaceState(null, "", `#${target.id}`);
+        else history.pushState(null, "", `#${target.id}`);
+        scrollToSection(target);
+      };
+
+      const placeNav = () => {
+        if (!rail) return;
+        const box = rail.getBoundingClientRect();
+        dialog.style.top = `${box.top}px`;
+        dialog.style.height = `${box.height}px`;
+        dialog.style.left = `${box.right - 1}px`;
+      };
+
+      rail?.addEventListener("click", () => {
+        placeNav();
+        dialog.showModal();
+      });
+      addEventListener("resize", () => {
+        if (dialog.open) placeNav();
+      });
+      mq.addEventListener?.("change", () => {
+        if (!isMobile() && dialog.open) dialog.close();
+      });
+      document.addEventListener("click", async (event) => {
+        const link = event.target.closest(
+          ".sidebar a[href^='#'], #nav-list a[href^='#']",
+        );
         if (!link) return;
+        const target = document.querySelector(link.hash);
+        if (!target) return;
         event.preventDefault();
-        dialog.close();
-        const section = document.querySelector(link.hash);
-        if (!section) return;
-        history.replaceState(null, "", link.hash);
-        section.scrollIntoView({ block: "start" });
+        const fromDialog = link.closest("#nav-dialog");
+        if (fromDialog) dialog.close();
+        await jumpTo(target, Boolean(fromDialog));
       });
     </script>
   </body>
