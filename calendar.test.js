@@ -175,6 +175,63 @@ describe("demo: period switcher", () => {
     expect(el.dataset.view).toBe("days");
   });
 
+  it("labels prev/next Prev/Next by default, custom via prev-text/next-text", () => {
+    const el = mount({
+      "months-view": "12",
+      "year-view": "2025",
+      "with-switcher": true,
+    });
+    expect(el.shadowRoot.querySelector('[data-p="-1"]').textContent).toBe(
+      "Prev"
+    );
+    expect(el.shadowRoot.querySelector('[data-p="1"]').textContent).toBe(
+      "Next"
+    );
+    const custom = mount({
+      "months-view": "12",
+      "year-view": "2025",
+      "with-switcher": true,
+      "prev-text": "Back",
+      "next-text": "Forward",
+    });
+    expect(custom.shadowRoot.querySelector('[data-p="-1"]').textContent).toBe(
+      "Back"
+    );
+    expect(custom.shadowRoot.querySelector('[data-p="1"]').textContent).toBe(
+      "Forward"
+    );
+  });
+
+  it("renders empty labels when prev-text/next-text are empty", () => {
+    const el = mount({
+      "months-view": "12",
+      "year-view": "2025",
+      "with-switcher": true,
+      "prev-text": "",
+      "next-text": "",
+    });
+    expect(el.shadowRoot.querySelector('[data-p="-1"]').textContent).toBe(
+      ""
+    );
+    expect(el.shadowRoot.querySelector('[data-p="1"]').textContent).toBe("");
+  });
+
+  it("re-renders prev/next labels when prev-text/next-text change", () => {
+    const el = mount({
+      "months-view": "12",
+      "year-view": "2025",
+      "with-switcher": true,
+    });
+    el.setAttribute("prev-text", "Back");
+    expect(el.shadowRoot.querySelector('[data-p="-1"]').textContent).toBe(
+      "Back"
+    );
+    el.setAttribute("next-text", "Forward");
+    expect(el.shadowRoot.querySelector('[data-p="1"]').textContent).toBe(
+      "Forward"
+    );
+  });
+
   it("month panel picks a month, year panel picks a year", () => {
     const el = mount({
       "months-view": "12",
@@ -310,8 +367,8 @@ describe("demo: selected vs today", () => {
   });
 });
 
-// #range — minval/maxval gate day buttons only.
-describe("demo: range", () => {
+// #limits — minval/maxval gate day buttons only.
+describe("demo: limits", () => {
   it("disables outside days, keeps views navigable", () => {
     const el = mount({
       value: "2026-09-13",
@@ -976,9 +1033,9 @@ describe("weekday labels: locale", () => {
   });
 });
 
-// #weeknumbers — ISO week numbers, opt-in.
+// #weeknumbers — recipe (core ignores with-weeknumbers).
 describe("week numbers", () => {
-  it("paints one ISO week number per row when enabled", () => {
+  it("ignores the removed with-weeknumbers attribute", () => {
     const el = mount({
       "months-view": "9",
       "year-view": "2026",
@@ -987,15 +1044,9 @@ describe("week numbers", () => {
       "with-offset": true,
       "with-weeknumbers": true,
     });
-    const nos = [
-      ...el.shadowRoot.querySelectorAll('[part="weekno"]'),
-    ].map((n) => n.textContent);
-    // 1 header corner (empty) + 5 rows: offset 1 + 30 days = 31 cells.
-    expect(nos).toHaveLength(6);
-    expect(nos[0]).toBe("");
-    // Sep 1 2026 (Tue) sits in ISO week 36.
-    expect(nos[1]).toBe("36");
-    expect(nos.slice(1)).toEqual(["36", "37", "38", "39", "40"]);
+    expect(el.shadowRoot.querySelectorAll('[part="weekno"]')).toHaveLength(
+      0
+    );
   });
 
   it("renders no week numbers by default", () => {

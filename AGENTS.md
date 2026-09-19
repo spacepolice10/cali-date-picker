@@ -31,7 +31,7 @@ npm run minify  # rebuild calendar.min.js + map after touching calendar.js
   (`detail.date`, `detail.starts`, `detail.ends`).
 - **Observed attributes** (`observedAttributes`): `value`,
   `week-starts-on`, `with-offset`, `with-weekdays`, `with-switcher`,
-  `with-ranger`, `months`, `required`.
+  `with-ranger`, `prev-text`, `next-text`, `months`, `required`.
   `minval` / `maxval` / `year-view` / `months-view` are **not** observed:
   read once as initial state; after connect drive the period via
   `.yearView` / `.monthsView`. Don't expect re-renders from setting them.
@@ -107,12 +107,13 @@ leave the grid naturally. `#keys` returns early on `Tab` — never
 ## Demo page (`index.html`)
 
 - One `<section>` per feature (`#start`, `#hooks`, `#attributes`, `#bare`,
-  `#weekdays`, `#offset`, `#monday`, `#weeknumbers`, `#switcher`, `#selected`, `#range`,
-  `#months`, `#ranger`, `#open`, `#form`, `#events`, `#binding`, `#js`,
-  `#react`, `#popover`, `#dialog`); sidebar
+  `#weekdays`, `#offset`, `#monday`, `#switcher`, `#selected`, `#limits`,
+  `#months`, `#open`, `#ranger`, `#form`, `#events`, `#binding`, `#js`,
+  `#react`, `#popover`, `#dialog`, `#weeknumbers`, `#styling`); sidebar
   nav + mobile dots rail + `#nav-dialog` slide-in panel mirror them.
   `calendar.test.js` blocks are labeled with the same `#ids` — keep them
-  in sync when adding a demo.
+  in sync when adding a demo. Moving a section means moving its sidebar
+  entry too, keeping both orders identical.
 - Reference styles to preserve: host `width: 280px` so days / months /
   year views share one width, switcher `width: fit-content` and
   `margin-inline: auto`, calendar `width: 100%` with centered wrap,
@@ -126,8 +127,11 @@ leave the grid naturally. `#keys` returns early on `Tab` — never
 - Mobile script notes: section observer is viewport-rooted;
   dialog picks use `section.scrollIntoView()`; active-section highlight
   (`is-active`) applies to sidebar links, dialog links, and dots together.
-- Demo bodies (code + example) live in a `<template>` per section and
-  stamp when the section is about one viewport away. `#start` /
+- Demo bodies (HTML code + optional CSS snippet + example) live in a
+  `<template>` per section and
+  stamp when the section is about one viewport away. CSS snippets are
+  displayed-only (`language-css` for Highlight.js) — no live `<style>`
+  unless the demo needs it (like `#weeknumbers` / `#styling`). `#start` /
   `#hooks` / `#attributes` stay eager. `calendar.js`, Highlight.js, and React load
   on first use. Sidebar / hash jumps stamp every section through the
   target first so scroll position is correct. Add an `inits[id]` wiring

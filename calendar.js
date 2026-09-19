@@ -41,15 +41,6 @@ function pair(v) {
 const mf = new Intl.DateTimeFormat("en-US", { month: "long" });
 const mfName = mf.format.bind(mf);
 
-// ISO-8601 week number of a wall date.
-function wn(d) {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = (t.getUTCDay() + 6) % 7;
-  t.setUTCDate(t.getUTCDate() - day + 3);
-  const f = new Date(Date.UTC(t.getUTCFullYear(), 0, 4));
-  return 1 + Math.round((t - f) / 6048e5);
-}
-
 function butn(part, attr, name) {
   return `<button type="button" part="${part}"${attr}>${name}</button>`;
 }
@@ -84,8 +75,9 @@ function daysPart(d, s, e, preview, today, disabled) {
  * @attr {string} [locale=""] BCP 47 tag (e.g. `de-DE`): month + weekday names and default week start. Explicit `week-starts-on` wins.
  * @attr {boolean} [with-offset] Adds empty leading cells so the 1st lines up with its weekday.
  * @attr {boolean} [with-weekdays] Shows weekday labels in the first row.
- * @attr {boolean} [with-weeknumbers] Shows one ISO-8601 week number per row.
- * @attr {boolean} [with-switcher] Shows prev/next plus month and year view switching.
+  * @attr {boolean} [with-switcher] Shows prev/next plus month and year view switching.
+  * @attr {string} [prev-text="Prev"] Previous-period button label. Empty renders no text (icon-only via CSS).
+  * @attr {string} [next-text="Next"] Next-period button label. Empty renders no text (icon-only via CSS).
  * @attr {boolean} [with-ranger] Two-date picking. `value` becomes `start/end`.
  * @attr {number} [months="1"] Visible month panes (1–12). After connect, changing it re-renders.
  * @attr {number} [year-view] Initial visible year when there is no `value`. After connect use `.yearView`.
@@ -102,9 +94,8 @@ function daysPart(d, s, e, preview, today, disabled) {
  * @csspart calendar Wrapper for day panes, or the months/year overlay grid.
  * @csspart pane One month grid.
  * @csspart caption Month name, when more than one pane is shown.
- * @csspart weekday Weekday label.
- * @csspart weekno ISO week number.
- * @csspart offset Leading empty cell.
+  * @csspart weekday Weekday label.
+  * @csspart offset Leading empty cell.
  * @csspart date Day button. May also be `current`, `selected`, `disabled`, `in-ranges`, `preselected`.
   * @csspart mn-butn Month-grid button. May also be `selected`. Each also carries `m1`–`m12` for per-month styling.
  * @csspart yr-butn Year-grid button. May also be `selected`.
@@ -123,7 +114,8 @@ export class CaliCalendar extends HTMLElement {
     "with-weekdays",
     "with-switcher",
     "with-ranger",
-    "with-weeknumbers",
+    "prev-text",
+    "next-text",
     "months",
     "locale",
     "required",
@@ -624,11 +616,13 @@ export class CaliCalendar extends HTMLElement {
     const viewDate = new Date(this.#yr, this.#Mo - 1, 1);
     const monthsOpen = this.#view === "months";
     const yearOpen = this.#view === "year";
+    const prev = this.getAttribute("prev-text") ?? "Prev";
+    const next = this.getAttribute("next-text") ?? "Next";
     this.#navi.innerHTML =
       butn(
         "prev",
         ` data-a="p" data-p="-1" aria-label="Previous period"`,
-        "←"
+        prev
       ) +
       butn(
         `months${monthsOpen ? " selected" : ""}`,
@@ -643,7 +637,7 @@ export class CaliCalendar extends HTMLElement {
       butn(
         "next",
         ` data-a="p" data-p="1" aria-label="Next period"`,
-        "→"
+        next
       );
   }
 
@@ -697,9 +691,7 @@ export class CaliCalendar extends HTMLElement {
     const pieces = ['<div part="pane">'];
     if (named) pieces.push(`<div part="caption">${this.#mn(viewDate)}</div>`);
     const wk = this.#wk();
-    const wnos = this.hasAttribute("with-weeknumbers");
     if (this.hasAttribute("with-weekdays")) {
-      if (wnos) pieces.push('<span part="weekno" aria-hidden="true"></span>');
       for (const w of this.#wds(wk)) {
         pieces.push(`<span part="weekday">${w}</span>`);
       }
@@ -722,18 +714,7 @@ export class CaliCalendar extends HTMLElement {
         )
       );
     }
-    if (!wnos) {
-      pieces.push(cells.join(""));
-    } else {
-      // One ISO week number per 7-cell row; the row's week is the week
-      // of its first actual date (offsets carry no date).
-      const rows = Math.ceil(cells.length / 7);
-      for (let r = 0; r < rows; r++) {
-        const di = Math.max(0, r * 7 - off);
-        pieces.push(`<span part="weekno">${wn(toDt(list[di]))}</span>`);
-        pieces.push(cells.slice(r * 7, r * 7 + 7).join(""));
-      }
-    }
+    pieces.push(cells.join(""));
     pieces.push("</div>");
     return pieces.join("");
   }
