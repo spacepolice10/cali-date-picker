@@ -220,6 +220,21 @@ describe("demo: period switcher", () => {
     clickBtn(el, '[data-a="p"][data-p="1"]');
     expect(Number(first()) - Number(before)).toBe(10);
   });
+
+  it("exposes m1..m12 parts on month buttons", () => {
+    const el = mount({
+      "months-view": "12",
+      "year-view": "2025",
+      "with-switcher": true,
+    });
+    clickBtn(el, '[data-a="v"][data-v="months"]');
+    const btns = [...el.shadowRoot.querySelectorAll('[data-a="m"]')];
+    expect(btns).toHaveLength(12);
+    btns.forEach((butn, i) => {
+      expect(butn.getAttribute("part")).toContain("mn-butn");
+      expect(butn.getAttribute("part")).toContain(`m${i + 1}`);
+    });
+  });
 });
 
 // Recipe: external confirm — veto in beforechange, commit from page JS.
@@ -866,5 +881,145 @@ describe("value hygiene", () => {
     expect(
       el.shadowRoot.querySelectorAll('[part="offset"]')
     ).toHaveLength(1);
+  });
+});
+
+// 2a — any week start.
+describe("week start: any day", () => {
+  it("starts Saturday with offset 3 for Sep 2026", () => {
+    const el = mount({
+      "months-view": "9",
+      "year-view": "2026",
+      "with-weekdays": true,
+      "with-offset": true,
+      "week-starts-on": "sa",
+    });
+    const labels = [
+      ...el.shadowRoot.querySelectorAll('[part="weekday"]'),
+    ].map((n) => n.textContent);
+    expect(labels[0]).toBe("Sa");
+    expect(labels[6]).toBe("Fr");
+    // Sep 1 2026 Tuesday: (2 - 6 + 7) % 7 = 3.
+    expect(
+      el.shadowRoot.querySelectorAll('[part="offset"]')
+    ).toHaveLength(3);
+  });
+
+  it("accepts numeric 0-6 and full rotation", () => {
+    const el = mount({
+      "months-view": "9",
+      "year-view": "2026",
+      "with-weekdays": true,
+      "with-offset": true,
+      "week-starts-on": "6",
+    });
+    const labels = [
+      ...el.shadowRoot.querySelectorAll('[part="weekday"]'),
+    ].map((n) => n.textContent);
+    expect(labels[0]).toBe("Sa");
+    expect(
+      el.shadowRoot.querySelectorAll('[part="offset"]')
+    ).toHaveLength(3);
+  });
+
+  it("starts Wednesday with offset 6 for Sep 2026", () => {
+    const el = mount({
+      "months-view": "9",
+      "year-view": "2026",
+      "with-weekdays": true,
+      "with-offset": true,
+      "week-starts-on": "we",
+    });
+    const labels = [
+      ...el.shadowRoot.querySelectorAll('[part="weekday"]'),
+    ].map((n) => n.textContent);
+    expect(labels[0]).toBe("We");
+    expect(
+      el.shadowRoot.querySelectorAll('[part="offset"]')
+    ).toHaveLength(6);
+  });
+});
+
+// 2b — locale names (weekdays + months).
+describe("weekday labels: locale", () => {
+  it("localizes weekday labels via locale", () => {
+    const el = mount({
+      "months-view": "9",
+      "year-view": "2026",
+      "with-weekdays": true,
+      locale: "de-DE",
+    });
+    const labels = [
+      ...el.shadowRoot.querySelectorAll('[part="weekday"]'),
+    ].map((n) => n.textContent);
+    expect(labels).toHaveLength(7);
+    // German short names, Monday-first via locale default week start.
+    expect(labels[0]).toMatch(/Mo/i);
+    expect(labels[6]).toMatch(/So/i);
+    expect(labels.join(" ")).not.toContain("Su");
+  });
+
+  it("localizes month names via locale", () => {
+    const el = mount({
+      "months-view": "3",
+      "year-view": "2026",
+      "with-switcher": true,
+      locale: "de-DE",
+    });
+    // March in German is März (differs from English March).
+    expect(
+      el.shadowRoot.querySelector('[data-v="months"]').textContent
+    ).toBe("März");
+    el.shadowRoot.querySelector('[data-v="months"]').click();
+    const march = el.shadowRoot.querySelector('[data-m="3"]');
+    expect(march.textContent).toBe("März");
+  });
+});
+
+// #weeknumbers — ISO week numbers, opt-in.
+describe("week numbers", () => {
+  it("paints one ISO week number per row when enabled", () => {
+    const el = mount({
+      "months-view": "9",
+      "year-view": "2026",
+      "week-starts-on": "mo",
+      "with-weekdays": true,
+      "with-offset": true,
+      "with-weeknumbers": true,
+    });
+    const nos = [
+      ...el.shadowRoot.querySelectorAll('[part="weekno"]'),
+    ].map((n) => n.textContent);
+    // 1 header corner (empty) + 5 rows: offset 1 + 30 days = 31 cells.
+    expect(nos).toHaveLength(6);
+    expect(nos[0]).toBe("");
+    // Sep 1 2026 (Tue) sits in ISO week 36.
+    expect(nos[1]).toBe("36");
+    expect(nos.slice(1)).toEqual(["36", "37", "38", "39", "40"]);
+  });
+
+  it("renders no week numbers by default", () => {
+    const el = mount({ "months-view": "9", "year-view": "2026" });
+    expect(el.shadowRoot.querySelectorAll('[part="weekno"]')).toHaveLength(
+      0
+    );
+  });
+});
+
+// 2d — RTL arrows flip.
+describe("rtl: arrows mirror", () => {
+  it("ArrowRight moves to the previous date in RTL", () => {
+    const el = mount({
+      value: "2026-09-13",
+      "months-view": "9",
+      "year-view": "2026",
+      dir: "rtl",
+    });
+    const start = el.shadowRoot.querySelector('[data-d="2026-09-13"]');
+    start.focus();
+    start.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })
+    );
+    expect(el.shadowRoot.activeElement?.dataset?.d).toBe("2026-09-12");
   });
 });

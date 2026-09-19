@@ -463,6 +463,46 @@
         padding: var(--space-h);
       }
 
+      /* Scroll strips stretch to the parent width; the strip itself
+         scrolls horizontally while calendars inside keep size. */
+      .cal-flex,
+      cali-calendar[months]:not([months="1"]) {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+
+      /* Side-by-side demo calendars (e.g. English + localized):
+         horizontal scroll strip, never wrapping. */
+      .cal-flex {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: calc(var(--space-h) * 2);
+        overflow-x: auto;
+        padding: var(--space-v) var(--space-h);
+      }
+
+      .cal-flex cali-calendar {
+        flex: none;
+      }
+
+      /* Multi-pane calendars (months="2"+) swipe horizontally
+         instead of stacking vertically. Single-pane rendering
+         is untouched: one 100%-wide pane never overflows. */
+      cali-calendar[months]:not([months="1"])::part(calendar) {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        overflow-x: auto;
+      }
+
+      /* Panes keep a fixed comfortable width inside the stretched
+         strip — they must NOT be 100%, or each pane would blow up
+         to the full viewport width. */
+      cali-calendar[months]:not([months="1"])::part(pane) {
+        flex: none;
+        width: min(280px, 100%);
+      }
+
       cali-calendar::part(switcher) {
         display: grid;
         grid-template-columns: auto auto auto auto;
@@ -496,6 +536,7 @@
         grid-column: 1 / -1;
         font: inherit;
         font-weight: 600;
+        text-align: center;
         margin: 0;
       }
 
@@ -515,6 +556,18 @@
 
       cali-calendar[data-view="year"]::part(calendar) {
         grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      cali-calendar[with-weeknumbers]::part(pane) {
+        grid-template-columns: auto repeat(7, minmax(0, 1fr));
+      }
+
+      cali-calendar::part(weekno) {
+        display: grid;
+        place-items: center;
+        white-space: nowrap;
+        opacity: 0.6;
+        font-size: 0.75rem;
       }
 
       cali-calendar::part(weekday) {
@@ -642,6 +695,7 @@
             <li><a href="#weekdays">Weekdays</a></li>
             <li><a href="#offset">Offset cells</a></li>
             <li><a href="#monday">Monday first</a></li>
+            <li><a href="#weeknumbers">Week numbers</a></li>
             <li><a href="#switcher">Period switcher</a></li>
             <li><a href="#selected">Selected vs today</a></li>
             <li><a href="#range">Range</a></li>
@@ -655,6 +709,7 @@
             <li><a href="#react">React</a></li>
             <li><a href="#popover">Popover</a></li>
             <li><a href="#dialog">Dialog</a></li>
+            <li><a href="#styling">Styling</a></li>
           </ul>
         </nav>
       </aside>
@@ -682,7 +737,7 @@
 &lt;cali-calendar&gt;&lt;/cali-calendar&gt;</code></pre>
         <p>
           jsDelivr serves <code>calendar.min.js</code> from GitHub. Pin a tag
-          instead of <code>@main</code> when you want a fixed build. There's no package manager support. Cali is just 2.6kb minified and gzipped & browsers easily handle up to 40 script modules in the page. 
+          instead of <code>@main</code> when you want a fixed build. There's no package manager support. Cali is just under 10kb minified and under 4kb gzipped & browsers easily handle up to 40 script modules in the page. 
         </p>
       </section>
 
@@ -702,9 +757,10 @@
           <li><code>::part(calendar)</code></li>
           <li><code>::part(pane)</code> / <code>::part(caption)</code></li>
           <li><code>::part(weekday)</code></li>
+          <li><code>::part(weekno)</code></li>
           <li><code>::part(offset)</code></li>
           <li><code>::part(date)</code> / <code>::part(current)</code> / <code>::part(selected)</code> / <code>::part(disabled)</code> / <code>::part(in-ranges)</code> / <code>::part(preselected)</code></li>
-          <li><code>::part(mn-butn)</code></li>
+          <li><code>::part(mn-butn)</code> + <code>::part(m1)</code>–<code>::part(m12)</code></li>
           <li><code>::part(yr-butn)</code></li>
         </ul>
         <h3 class="block-title">Code</h3>
@@ -762,7 +818,15 @@ cali-calendar::part(selected) {
             </tr>
             <tr>
               <td><code>week-starts-on="mo"</code></td>
-              <td>Starts the week on Monday. Default is Sunday; any value other than <code>mo</code> is Sunday.</td>
+              <td>First day: <code>su</code> / <code>mo</code> / <code>tu</code> / <code>we</code> / <code>th</code> / <code>fr</code> / <code>sa</code> (or <code>0</code>–<code>6</code>). Wins over <code>locale</code>; default is Sunday (or the locale default when set).</td>
+            </tr>
+            <tr>
+              <td><code>locale="de-DE"</code></td>
+              <td>BCP 47 tag: month + weekday names and default week start. Explicit <code>week-starts-on</code> wins.</td>
+            </tr>
+            <tr>
+              <td><code>with-weeknumbers</code></td>
+              <td>Shows one ISO-8601 week number per row. Needs <code>with-weekdays</code> + pane CSS for an 8th column to align.</td>
             </tr>
             <tr>
               <td><code>with-switcher</code></td>
@@ -807,13 +871,18 @@ cali-calendar::part(selected) {
         <h2>Weekdays</h2>
         <p>
           Labels in the first row. Without offset, the 1st still starts in
-          column one.
+          column one. <code>locale</code> localizes the labels (and month
+          names) and picks the locale's default week start.
         </p>
         <template>
         <h3 class="block-title">Code</h3>
-        <pre><code class="language-html">&lt;cali-calendar with-weekdays&gt;&lt;/cali-calendar&gt;</code></pre>
+        <pre><code class="language-html">&lt;cali-calendar with-weekdays&gt;&lt;/cali-calendar&gt;
+&lt;cali-calendar locale="de-DE" with-weekdays with-offset&gt;&lt;/cali-calendar&gt;</code></pre>
         <h3 class="block-title">Example</h3>
-        <cali-calendar with-weekdays></cali-calendar>
+        <div class="cal-flex">
+          <cali-calendar with-weekdays></cali-calendar>
+          <cali-calendar locale="de-DE" with-weekdays with-offset></cali-calendar>
+        </div>
         </template>
       </section>
 
@@ -843,6 +912,31 @@ cali-calendar::part(selected) {
           week-starts-on="mo"
           with-weekdays
           with-offset
+        ></cali-calendar>
+        </template>
+      </section>
+
+      <section id="weeknumbers">
+        <h2>Week numbers</h2>
+        <p>One ISO-8601 week number per row. Pair with Monday start, weekdays, and offset so rows line up.</p>
+        <template>
+        <h3 class="block-title">Code</h3>
+        <pre><code class="language-html">&lt;cali-calendar
+  months-view="9"
+  year-view="2026"
+  week-starts-on="mo"
+  with-weekdays
+  with-offset
+  with-weeknumbers
+&gt;&lt;/cali-calendar&gt;</code></pre>
+        <h3 class="block-title">Example</h3>
+        <cali-calendar
+          months-view="9"
+          year-view="2026"
+          week-starts-on="mo"
+          with-weekdays
+          with-offset
+          with-weeknumbers
         ></cali-calendar>
         </template>
       </section>
@@ -930,7 +1024,7 @@ cali-calendar::part(selected) {
         <h2>Months</h2>
         <p>
           <code>months</code> paints that many sibling <code>pane</code>s.
-          Host CSS wraps them.
+          Host CSS lays them out in a horizontal scroll strip.
         </p>
         <template>
         <h3 class="block-title">Code</h3>
@@ -1295,6 +1389,208 @@ calendar.addEventListener("change", (event) => {
 });</code></pre>
         </template>
       </section>
+
+      <section id="styling">
+        <h2>Styling</h2>
+        <p>
+          A playful copy-paste theme, scoped by host
+          <code>id</code> (<code>#theme-play</code>) so it never leaks
+          into other calendars. Date, month-grid, and year-grid buttons
+          share one chunky look with hover lift and a pop on
+          <code>selected</code>. Click the month button in the switcher
+          to see the months panel: each month also carries
+          <code>m1</code>–<code>m12</code> next to
+          <code>mn-butn</code>, with a Tabler-icon SVG-mask
+          <code>::after</code> badge (needs a modern browser for
+          <code>::part()::after</code>).
+        </p>
+        <template>
+        <style>
+          #theme-play::part(date),
+          #theme-play::part(mn-butn),
+          #theme-play::part(yr-butn) {
+            transition: transform 0.15s ease, background-color 0.15s ease;
+          }
+          #theme-play {
+            background: #fff;
+            border: 2px solid #111;
+            border-radius: 20px;
+            box-shadow: 4px 4px 0 #111;
+            color: #111;
+          }
+          #theme-play::part(pane) {
+            border-color: #111;
+            border-radius: 12px;
+          }
+          #theme-play::part(date),
+          #theme-play::part(mn-butn),
+          #theme-play::part(yr-butn) {
+            border-radius: 12px;
+            background: #f1f5f9;
+            border: 2px solid transparent;
+            font-weight: 700;
+          }
+          #theme-play::part(date):hover,
+          #theme-play::part(mn-butn):hover,
+          #theme-play::part(yr-butn):hover {
+            background: #fef08a;
+            border-color: #111;
+            transform: translateY(-2px) rotate(-1deg);
+          }
+          #theme-play::part(selected) {
+            background: #a3e635;
+            border-color: #111;
+            animation: play-pop 0.25s ease;
+          }
+          #theme-play::part(current) {
+            border-color: #111;
+            border-style: dashed;
+          }
+          #theme-play::part(prev),
+          #theme-play::part(next),
+          #theme-play::part(months),
+          #theme-play::part(years) {
+            border: 2px solid #111;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 2px 2px 0 #111;
+          }
+          #theme-play::part(prev):hover,
+          #theme-play::part(next):hover,
+          #theme-play::part(months):hover,
+          #theme-play::part(years):hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 #111;
+          }
+          #theme-play::part(mn-butn) {
+            position: relative;
+            padding-bottom: 20px;
+          }
+          #theme-play::part(mn-butn)::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: 4px;
+            width: 16px;
+            height: 16px;
+            transform: translateX(-50%);
+            background: currentColor;
+            opacity: 0.55;
+            pointer-events: none;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Ccircle cx='4' cy='4' r='3'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Ccircle cx='4' cy='4' r='3'/%3E%3C/svg%3E") center / contain no-repeat;
+          }
+          /* Seasonal badges: Tabler outline icons (MIT, tabler.io),
+             restyled as masks (stroke='black', filler path dropped). */
+          #theme-play::part(m4)::after {
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0'/%3E%3Cpath d='M12 2a3 3 0 0 1 3 3c0 .562 -.259 1.442 -.776 2.64l-.724 1.36l1.76 -1.893c.499 -.6 .922 -1 1.27 -1.205a2.968 2.968 0 0 1 4.07 1.099a3.011 3.011 0 0 1 -1.09 4.098c-.374 .217 -.99 .396 -1.846 .535l-2.664 .366l2.4 .326c1 .145 1.698 .337 2.11 .576a3.011 3.011 0 0 1 1.09 4.098a2.968 2.968 0 0 1 -4.07 1.098c-.348 -.202 -.771 -.604 -1.27 -1.205l-1.76 -1.893l.724 1.36c.516 1.199 .776 2.079 .776 2.64a3 3 0 0 1 -6 0c0 -.562 .259 -1.442 .776 -2.64l.724 -1.36l-1.76 1.893c-.499 .601 -.922 1 -1.27 1.205a2.968 2.968 0 0 1 -4.07 -1.098a3.011 3.011 0 0 1 1.09 -4.098c.374 -.218 .99 -.396 1.846 -.536l2.664 -.366l-2.4 -.325c-1 -.145 -1.698 -.337 -2.11 -.576a3.011 3.011 0 0 1 -1.09 -4.099a2.968 2.968 0 0 1 4.07 -1.099c.348 .203 .771 .604 1.27 1.205l1.76 1.894c-1 -2.292 -1.5 -3.625 -1.5 -4a3 3 0 0 1 3 -3z'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0'/%3E%3Cpath d='M12 2a3 3 0 0 1 3 3c0 .562 -.259 1.442 -.776 2.64l-.724 1.36l1.76 -1.893c.499 -.6 .922 -1 1.27 -1.205a2.968 2.968 0 0 1 4.07 1.099a3.011 3.011 0 0 1 -1.09 4.098c-.374 .217 -.99 .396 -1.846 .535l-2.664 .366l2.4 .326c1 .145 1.698 .337 2.11 .576a3.011 3.011 0 0 1 1.09 4.098a2.968 2.968 0 0 1 -4.07 1.098c-.348 -.202 -.771 -.604 -1.27 -1.205l-1.76 -1.893l.724 1.36c.516 1.199 .776 2.079 .776 2.64a3 3 0 0 1 -6 0c0 -.562 .259 -1.442 .776 -2.64l.724 -1.36l-1.76 1.893c-.499 .601 -.922 1 -1.27 1.205a2.968 2.968 0 0 1 -4.07 -1.098a3.011 3.011 0 0 1 1.09 -4.098c.374 -.218 .99 -.396 1.846 -.536l2.664 -.366l-2.4 -.325c-1 -.145 -1.698 -.337 -2.11 -.576a3.011 3.011 0 0 1 -1.09 -4.099a2.968 2.968 0 0 1 4.07 -1.099c.348 .203 .771 .604 1.27 1.205l1.76 1.894c-1 -2.292 -1.5 -3.625 -1.5 -4a3 3 0 0 1 3 -3z'/%3E%3C/svg%3E");
+          }
+          #theme-play::part(m6)::after {
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0'/%3E%3Cpath d='M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0'/%3E%3Cpath d='M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7'/%3E%3C/svg%3E");
+          }
+          #theme-play::part(m10)::after {
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 15l1.5 1l1.5 -1l1.5 1l1.5 -1'/%3E%3Cpath d='M10 11h.01'/%3E%3Cpath d='M14 11h.01'/%3E%3Cpath d='M17 6.082c2.609 .588 3.627 4.162 2.723 7.983c-.903 3.82 -2.75 6.44 -5.359 5.853a3.355 3.355 0 0 1 -.774 -.279a3.728 3.728 0 0 1 -1.59 .361c-.556 0 -1.09 -.127 -1.59 -.362a3.296 3.296 0 0 1 -.774 .28c-2.609 .588 -4.456 -2.033 -5.36 -5.853c-.903 -3.82 .115 -7.395 2.724 -7.983c1.085 -.244 1.575 .066 2.585 .787c.716 -.554 1.54 -.869 2.415 -.869c.876 0 1.699 .315 2.415 .87c1.01 -.722 1.5 -1.032 2.585 -.788z'/%3E%3Cpath d='M12 6c0 -1.226 .693 -2.346 1.789 -2.894l.211 -.106'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 15l1.5 1l1.5 -1l1.5 1l1.5 -1'/%3E%3Cpath d='M10 11h.01'/%3E%3Cpath d='M14 11h.01'/%3E%3Cpath d='M17 6.082c2.609 .588 3.627 4.162 2.723 7.983c-.903 3.82 -2.75 6.44 -5.359 5.853a3.355 3.355 0 0 1 -.774 -.279a3.728 3.728 0 0 1 -1.59 .361c-.556 0 -1.09 -.127 -1.59 -.362a3.296 3.296 0 0 1 -.774 .28c-2.609 .588 -4.456 -2.033 -5.36 -5.853c-.903 -3.82 .115 -7.395 2.724 -7.983c1.085 -.244 1.575 .066 2.585 .787c.716 -.554 1.54 -.869 2.415 -.869c.876 0 1.699 .315 2.415 .87c1.01 -.722 1.5 -1.032 2.585 -.788z'/%3E%3Cpath d='M12 6c0 -1.226 .693 -2.346 1.789 -2.894l.211 -.106'/%3E%3C/svg%3E");
+          }
+          #theme-play::part(m12)::after {
+            opacity: 1;
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 4l2 1l2 -1'/%3E%3Cpath d='M12 2v6.5l3 1.72'/%3E%3Cpath d='M17.928 6.268l.134 2.232l1.866 1.232'/%3E%3Cpath d='M20.66 7l-5.629 3.25l.01 3.458'/%3E%3Cpath d='M19.928 14.268l-1.866 1.232l-.134 2.232'/%3E%3Cpath d='M20.66 17l-5.629 -3.25l-2.99 1.738'/%3E%3Cpath d='M14 20l-2 -1l-2 1'/%3E%3Cpath d='M12 22v-6.5l-3 -1.72'/%3E%3Cpath d='M6.072 17.732l-.134 -2.232l-1.866 -1.232'/%3E%3Cpath d='M3.34 17l5.629 -3.25l-.01 -3.458'/%3E%3Cpath d='M4.072 9.732l1.866 -1.232l.134 -2.232'/%3E%3Cpath d='M3.34 7l5.629 3.25l2.99 -1.738'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 4l2 1l2 -1'/%3E%3Cpath d='M12 2v6.5l3 1.72'/%3E%3Cpath d='M17.928 6.268l.134 2.232l1.866 1.232'/%3E%3Cpath d='M20.66 7l-5.629 3.25l.01 3.458'/%3E%3Cpath d='M19.928 14.268l-1.866 1.232l-.134 2.232'/%3E%3Cpath d='M20.66 17l-5.629 -3.25l-2.99 1.738'/%3E%3Cpath d='M14 20l-2 -1l-2 1'/%3E%3Cpath d='M12 22v-6.5l-3 -1.72'/%3E%3Cpath d='M6.072 17.732l-.134 -2.232l-1.866 -1.232'/%3E%3Cpath d='M3.34 17l5.629 -3.25l-.01 -3.458'/%3E%3Cpath d='M4.072 9.732l1.866 -1.232l.134 -2.232'/%3E%3Cpath d='M3.34 7l5.629 3.25l2.99 -1.738'/%3E%3C/svg%3E");
+          }
+          @keyframes play-pop {
+            0% { transform: scale(0.8); }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            #theme-play::part(date),
+            #theme-play::part(mn-butn),
+            #theme-play::part(yr-butn),
+            #theme-play::part(prev),
+            #theme-play::part(next),
+            #theme-play::part(months),
+            #theme-play::part(years) {
+              transition: none;
+              transform: none;
+              animation: none;
+            }
+          }
+        </style>
+        <h3 class="block-title">Code</h3>
+        <pre><code class="language-css">#theme-play {
+  background: #fff;
+  border: 2px solid #111;
+  border-radius: 20px;
+  box-shadow: 4px 4px 0 #111;
+}
+#theme-play::part(date),
+#theme-play::part(mn-butn),
+#theme-play::part(yr-butn) {
+  border-radius: 12px;
+  background: #f1f5f9;
+  transition: transform 0.15s ease;
+}
+#theme-play::part(date):hover,
+#theme-play::part(mn-butn):hover,
+#theme-play::part(yr-butn):hover {
+  background: #fef08a;
+  border-color: #111;
+  transform: translateY(-2px) rotate(-1deg);
+}
+#theme-play::part(selected) {
+  background: #a3e635;
+  border-color: #111;
+  animation: play-pop 0.25s ease;
+}
+/* Per-month badges: every month button carries mn-butn + m1..m12.
+   Mask on ::after keeps the month label readable.
+   Icons: Tabler outline set (MIT, tabler.io) — m4 flower,
+   m6 sun, m10 pumpkin-scary, m12 snowflake. */
+#theme-play::part(mn-butn) {
+  position: relative;
+  padding-bottom: 20px;
+}
+#theme-play::part(mn-butn)::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 16px;
+  height: 16px;
+  transform: translateX(-50%);
+  background: currentColor;
+  opacity: 0.55;
+  pointer-events: none;
+  mask: url("data:image/svg+xml,...dot...") center / contain no-repeat;
+}
+#theme-play::part(m10)::after {
+  opacity: 1;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 15l1.5 1l1.5 -1l1.5 1l1.5 -1'/%3E%3Cpath d='M10 11h.01'/%3E%3Cpath d='M14 11h.01'/%3E%3Cpath d='M17 6.082c2.609 .588 3.627 4.162 2.723 7.983c-.903 3.82 -2.75 6.44 -5.359 5.853a3.355 3.355 0 0 1 -.774 -.279a3.728 3.728 0 0 1 -1.59 .361c-.556 0 -1.09 -.127 -1.59 -.362a3.296 3.296 0 0 1 -.774 .28c-2.609 .588 -4.456 -2.033 -5.36 -5.853c-.903 -3.82 .115 -7.395 2.724 -7.983c1.085 -.244 1.575 .066 2.585 .787c.716 -.554 1.54 -.869 2.415 -.869c.876 0 1.699 .315 2.415 .87c1.01 -.722 1.5 -1.032 2.585 -.788z'/%3E%3Cpath d='M12 6c0 -1.226 .693 -2.346 1.789 -2.894l.211 -.106'/%3E%3C/svg%3E");
+}
+@keyframes play-pop {
+  0% { transform: scale(0.8); }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #theme-play::part(date) {
+    transition: none;
+    animation: none;
+    transform: none;
+  }
+}</code></pre>
+        <h3 class="block-title">Example</h3>
+        <cali-calendar
+          id="theme-play"
+          value="2026-09-13"
+          with-weekdays
+          with-offset
+          with-switcher
+        ></cali-calendar>
+        </template>
+      </section>
       </main>
       </div>
     </div>
@@ -1334,14 +1630,17 @@ calendar.addEventListener("change", (event) => {
             { default: hljs },
             { default: xml },
             { default: javascript },
+            { default: css },
           ] = await Promise.all([
             import(`${HLJS}/es/core.min.js`),
             import(`${HLJS}/es/languages/xml.min.js`),
             import(`${HLJS}/es/languages/javascript.min.js`),
+            import(`${HLJS}/es/languages/css.min.js`),
           ]);
           hljs.registerLanguage("xml", xml);
           hljs.registerLanguage("html", xml);
           hljs.registerLanguage("javascript", javascript);
+          hljs.registerLanguage("css", css);
           return hljs;
         })());
 

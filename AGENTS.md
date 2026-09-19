@@ -107,7 +107,7 @@ leave the grid naturally. `#keys` returns early on `Tab` — never
 ## Demo page (`index.html`)
 
 - One `<section>` per feature (`#start`, `#hooks`, `#attributes`, `#bare`,
-  `#weekdays`, `#offset`, `#monday`, `#switcher`, `#selected`, `#range`,
+  `#weekdays`, `#offset`, `#monday`, `#weeknumbers`, `#switcher`, `#selected`, `#range`,
   `#months`, `#ranger`, `#open`, `#form`, `#events`, `#binding`, `#js`,
   `#react`, `#popover`, `#dialog`); sidebar
   nav + mobile dots rail + `#nav-dialog` slide-in panel mirror them.
@@ -149,7 +149,7 @@ leave the grid naturally. `#keys` returns early on `Tab` — never
 
 ## Weight budget
 
-`calendar.min.js` is the product (~7 KB / ~2.8 KB gzip). Rules:
+`calendar.min.js` is the product (<10 KB / <4 KB gzip). Rules:
 
 - Public `::part` / attribute / ARIA strings are shipped bytes — keep
   new ones short.

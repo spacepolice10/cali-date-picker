@@ -41,6 +41,15 @@ function pair(v) {
 const mf = new Intl.DateTimeFormat("en-US", { month: "long" });
 const mfName = mf.format.bind(mf);
 
+// ISO-8601 week number of a wall date.
+function wn(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = (t.getUTCDay() + 6) % 7;
+  t.setUTCDate(t.getUTCDate() - day + 3);
+  const f = new Date(Date.UTC(t.getUTCFullYear(), 0, 4));
+  return 1 + Math.round((t - f) / 6048e5);
+}
+
 function butn(part, attr, name) {
   return `<button type="button" part="${part}"${attr}>${name}</button>`;
 }
@@ -71,9 +80,11 @@ function daysPart(d, s, e, preview, today, disabled) {
  * @attr {string} [value=""] Selected date `YYYY-MM-DD`, or `YYYY-MM-DD/YYYY-MM-DD` when `with-ranger`.
  * @attr {IsoDate} [minval=""] Earliest selectable date. Earlier day buttons render disabled.
  * @attr {IsoDate} [maxval=""] Latest selectable date. Later day buttons render disabled.
- * @attr {string} [week-starts-on="su"] `"mo"` starts the week on Monday, anything else is Sunday.
+ * @attr {string} [week-starts-on="su"] First day: `su`/`mo`/`tu`/`we`/`th`/`fr`/`sa` (or 0-6). Wins over `locale`; anything else is Sunday.
+ * @attr {string} [locale=""] BCP 47 tag (e.g. `de-DE`): month + weekday names and default week start. Explicit `week-starts-on` wins.
  * @attr {boolean} [with-offset] Adds empty leading cells so the 1st lines up with its weekday.
  * @attr {boolean} [with-weekdays] Shows weekday labels in the first row.
+ * @attr {boolean} [with-weeknumbers] Shows one ISO-8601 week number per row.
  * @attr {boolean} [with-switcher] Shows prev/next plus month and year view switching.
  * @attr {boolean} [with-ranger] Two-date picking. `value` becomes `start/end`.
  * @attr {number} [months="1"] Visible month panes (1–12). After connect, changing it re-renders.
@@ -92,9 +103,10 @@ function daysPart(d, s, e, preview, today, disabled) {
  * @csspart pane One month grid.
  * @csspart caption Month name, when more than one pane is shown.
  * @csspart weekday Weekday label.
+ * @csspart weekno ISO week number.
  * @csspart offset Leading empty cell.
  * @csspart date Day button. May also be `current`, `selected`, `disabled`, `in-ranges`, `preselected`.
- * @csspart mn-butn Month-grid button. May also be `selected`.
+  * @csspart mn-butn Month-grid button. May also be `selected`. Each also carries `m1`–`m12` for per-month styling.
  * @csspart yr-butn Year-grid button. May also be `selected`.
  * @csspart selected Selected date, month, year, or open view toggle.
  * @csspart current Today.
@@ -111,7 +123,9 @@ export class CaliCalendar extends HTMLElement {
     "with-weekdays",
     "with-switcher",
     "with-ranger",
+    "with-weeknumbers",
     "months",
+    "locale",
     "required",
   ];
 
@@ -181,7 +195,18 @@ export class CaliCalendar extends HTMLElement {
     const buttons = [...this.#grid.querySelectorAll("button")];
     const at = buttons.indexOf(el);
     if (at < 0) return;
-    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -rw, ArrowDown: rw }[event.key];
+    // RTL mirrors sideways arrows; Up/Down stay. dir may sit on self or
+    // an ancestor; computed style covers CSS-only direction.
+    const rtl =
+      this.closest?.('[dir="rtl"]') ||
+      (() => {
+        try {
+          return getComputedStyle(this).direction === "rtl";
+        } catch {
+          return false;
+        }
+      })();
+    const step = { ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1, ArrowUp: -rw, ArrowDown: rw }[event.key];
     let to;
     let walk;
     if (event.key === "Home") {
@@ -305,6 +330,54 @@ export class CaliCalendar extends HTMLElement {
   #lim(name) {
     const date = toDt(this.getAttribute(name));
     return date ? toStrn(date) : "";
+  }
+  // Week start 0-6 (Su-Sa). Explicit `week-starts-on` wins (`su`/`mo`/…,
+  // full names via first two letters, or 0-6); otherwise derive from
+  // `locale` weekInfo; otherwise Sunday. Invalid explicit stays Sunday.
+  #wk() {
+    const v = this.getAttribute("week-starts-on");
+    if (v != null) {
+      const m = { su: 0, mo: 1, tu: 2, we: 3, th: 4, fr: 5, sa: 6 };
+      const k = v.trim().toLowerCase().slice(0, 2);
+      if (k in m) return m[k];
+      const n = Math.trunc(+v);
+      if (n >= 0 && n < 7) return n;
+      return 0;
+    }
+    const loc = this.getAttribute("locale");
+    if (loc) {
+      try {
+        const L = new Intl.Locale(loc);
+        const w = L.weekInfo?.firstDay ?? L.getWeekInfo?.().firstDay;
+        if (w) return w % 7;
+      } catch {}
+    }
+    return 0;
+  }
+  // Month name in `locale` or en-US.
+  #mn(d) {
+    const l = this.getAttribute("locale");
+    if (!l) return mfName(d);
+    try {
+      return new Intl.DateTimeFormat(l, { month: "long" }).format(d);
+    } catch {
+      return mfName(d);
+    }
+  }
+  // Weekday labels in `locale` (or English), rotated by week start.
+  #wds(wk) {
+    let base = WEEKDAYS;
+    const l = this.getAttribute("locale");
+    if (l) {
+      try {
+        const f = new Intl.DateTimeFormat(l, { weekday: "short" });
+        // 2026-09-06 is a Sunday; the next 7 days cover Su-Sa.
+        base = [6, 7, 8, 9, 10, 11, 12].map((d) =>
+          f.format(new Date(2026, 8, d))
+        );
+      } catch {}
+    }
+    return [0, 1, 2, 3, 4, 5, 6].map((i) => base[(i + wk) % 7]);
   }
   #applyLimit(name, value) {
     if (value) this.setAttribute(name, value);
@@ -560,7 +633,7 @@ export class CaliCalendar extends HTMLElement {
       butn(
         `months${monthsOpen ? " selected" : ""}`,
         ` data-a="v" data-v="months" aria-pressed="${monthsOpen}"`,
-        mfName(viewDate)
+        this.#mn(viewDate)
       ) +
       butn(
         `years${yearOpen ? " selected" : ""}`,
@@ -622,30 +695,44 @@ export class CaliCalendar extends HTMLElement {
 
   #pane({ viewDate, list }, named, today, min, max, s, e, active) {
     const pieces = ['<div part="pane">'];
-    if (named) pieces.push(`<div part="caption">${mfName(viewDate)}</div>`);
-    const mo = this.getAttribute("week-starts-on") === "mo";
+    if (named) pieces.push(`<div part="caption">${this.#mn(viewDate)}</div>`);
+    const wk = this.#wk();
+    const wnos = this.hasAttribute("with-weeknumbers");
     if (this.hasAttribute("with-weekdays")) {
-      for (let i = 0; i < 7; i++) {
-        pieces.push(`<span part="weekday">${WEEKDAYS[(i + mo) % 7]}</span>`);
+      if (wnos) pieces.push('<span part="weekno" aria-hidden="true"></span>');
+      for (const w of this.#wds(wk)) {
+        pieces.push(`<span part="weekday">${w}</span>`);
       }
     }
-    if (this.hasAttribute("with-offset")) {
-      pieces.push(
-        '<span part="offset" aria-hidden="true"></span>'.repeat(
-          (viewDate.getDay() - mo + 7) % 7
-        )
-      );
+    const off = this.hasAttribute("with-offset")
+      ? (viewDate.getDay() - wk + 7) % 7
+      : 0;
+    const cells = [];
+    for (let i = 0; i < off; i++) {
+      cells.push('<span part="offset" aria-hidden="true"></span>');
     }
     for (const date of list) {
       const on = date === s || date === e;
       const dis = this.#off(date, min, max);
-      pieces.push(
+      cells.push(
         butn(
           daysPart(date, s, e, false, today, dis),
           ` tabindex="${date === active && !dis ? 0 : -1}" aria-pressed="${on}" data-a="s" data-d="${date}"${dis ? " disabled" : ""}`,
           +date.slice(-2)
         )
       );
+    }
+    if (!wnos) {
+      pieces.push(cells.join(""));
+    } else {
+      // One ISO week number per 7-cell row; the row's week is the week
+      // of its first actual date (offsets carry no date).
+      const rows = Math.ceil(cells.length / 7);
+      for (let r = 0; r < rows; r++) {
+        const di = Math.max(0, r * 7 - off);
+        pieces.push(`<span part="weekno">${wn(toDt(list[di]))}</span>`);
+        pieces.push(cells.slice(r * 7, r * 7 + 7).join(""));
+      }
     }
     pieces.push("</div>");
     return pieces.join("");
@@ -656,8 +743,9 @@ export class CaliCalendar extends HTMLElement {
     return Array.from({ length: count }, (_, i) => {
       const v = getVal(i);
       const on = v === selected;
+      const xtra = key === "m" ? ` m${v}` : "";
       return butn(
-        `${part}${on ? " selected" : ""}`,
+        `${part}${xtra}${on ? " selected" : ""}`,
         ` tabindex="${on ? 0 : -1}" aria-pressed="${on}" data-a="${key}" data-${key}="${v}"`,
         label(v)
       );
@@ -671,7 +759,7 @@ export class CaliCalendar extends HTMLElement {
       "mn-butn",
       "m",
       (i) => i + 1,
-      (v) => mfName(new Date(this.#yr, v - 1, 1))
+      (v) => this.#mn(new Date(this.#yr, v - 1, 1))
     );
   }
 
